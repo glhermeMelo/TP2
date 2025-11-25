@@ -1,6 +1,7 @@
 package servidor;
 
 import microdispositivo.util.GeradorDeLeituras;
+import servidor.threads.AceitaMicrodispositivo;
 
 import java.io.IOException;
 import java.net.ServerSocket;

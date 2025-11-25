@@ -1,4 +1,4 @@
-package servidor;
+package servidor.threads;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -113,6 +113,7 @@ public class AceitaCliente implements Runnable {
         String localizacao = descriptografarLocalizacao(chaveSessao, nonce, payload);
 
         Integer portaBorda = -1;
+
         if (localizacao != null) {
             portaBorda = localizacaoServidoresDeBorda.get(localizacao);
             if (portaBorda == null) {

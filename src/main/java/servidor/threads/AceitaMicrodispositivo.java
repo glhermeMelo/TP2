@@ -1,4 +1,4 @@
-package servidor;
+package servidor.threads;
 
 import microdispositivo.util.GeradorDeLeituras;
 

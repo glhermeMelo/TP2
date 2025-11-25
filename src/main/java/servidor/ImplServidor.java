@@ -1,8 +1,6 @@
 package servidor;
 
-import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.security.KeyPair;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,99 +9,68 @@ public abstract class ImplServidor {
     protected String ip;
     protected String nome;
     protected boolean isActive = true;
-
+    protected ServerSocket serverSocket;
     protected ConcurrentHashMap<String, KeyPair> chavesClientes;
-    protected ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda;
 
-    private ServerSocket serverSocket;
 
-    public ImplServidor(int porta, String ip, String nome, ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda) {
+    protected ImplServidor(int porta, String ip, String nome) {
         this.porta = porta;
         this.ip = ip;
         this.nome = nome;
         this.chavesClientes = new ConcurrentHashMap<>();
-        this.localizacaoServidoresDeBorda = localizacaoServidoresDeBorda;
-        rodar();
     }
 
-    private void rodar() {
-        try {
-            serverSocket = new ServerSocket(porta);
-            System.out.println(nome + " escutando em " + ip + ":" + porta);
+    protected abstract void rodar();
 
-            while (isActive) {
-                try {
-                    Socket cliente = serverSocket.accept();
-                    AceitaCliente aceitaCliente = new AceitaCliente(cliente, chavesClientes, localizacaoServidoresDeBorda);
-                    Thread thread = new Thread(aceitaCliente);
-                    thread.start();
-                } catch (IOException acceptEx) {
-                    if (isActive) {
-                        System.err.println("Erro ao aceitar conexão: " + acceptEx.getMessage());
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Erro ao inicializar servidor de localização na porta " + porta + ": " + e.getMessage());
-        } finally {
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                try {
-                    serverSocket.close();
-                } catch (IOException ignored) {}
-            }
-            System.out.println(nome + " finalizado.");
-        }
-    }
-
-    public void parar() {
+    protected void parar() {
         this.isActive = false;
     }
 
-    public int getPorta() {
+    protected int getPorta() {
         return porta;
     }
 
-    public void setPorta(int porta) {
+    protected void setPorta(int porta) {
         this.porta = porta;
     }
 
-    public String getIp() {
+    protected String getIp() {
         return ip;
     }
 
-    public void setIp(String ip) {
+    protected void setIp(String ip) {
         this.ip = ip;
     }
 
-    public String getNome() {
+    protected String getNome() {
         return nome;
     }
 
-    public void setNome(String nome) {
+    protected void setNome(String nome) {
         this.nome = nome;
     }
 
-    public boolean isActive() {
+    protected boolean isActive() {
         return isActive;
     }
 
-    public void setActive(boolean active) {
+    protected void setActive(boolean active) {
         isActive = active;
     }
 
-    public ConcurrentHashMap<String, KeyPair> getChavesClientes() {
+    protected ServerSocket getServerSocket() {
+        return serverSocket;
+    }
+
+    protected void setServerSocket(ServerSocket serverSocket) {
+        this.serverSocket = serverSocket;
+    }
+
+    protected ConcurrentHashMap<String, KeyPair> getChavesClientes() {
         return chavesClientes;
     }
 
-    public void setChavesClientes(ConcurrentHashMap<String, KeyPair> chavesClientes) {
+    protected void setChavesClientes(ConcurrentHashMap<String, KeyPair> chavesClientes) {
         this.chavesClientes = chavesClientes;
-    }
-
-    public ConcurrentHashMap<String, Integer> getLocalizacaoServidoresDeBorda() {
-        return localizacaoServidoresDeBorda;
-    }
-
-    public void setLocalizacaoServidoresDeBorda(ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda) {
-        this.localizacaoServidoresDeBorda = localizacaoServidoresDeBorda;
     }
 }
