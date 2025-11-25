@@ -33,9 +33,10 @@ public class AceitaCliente implements Runnable {
             // 1 - Ler IdDispositivo
             Object entrada1 = entrada.readObject();
             if (!(entrada1 instanceof String)) {
-                System.err.println("Protocolo inválido: esperado deviceId (String).");
+                System.err.println("Protocolo inválido: esperado idDispositivo.");
                 return;
             }
+
             String idDispositivo = (String) entrada1;
 
             // 2 - Ler segundo objeto (Define se é Handshake ou Payload)
@@ -51,7 +52,7 @@ public class AceitaCliente implements Runnable {
                 // Envia chave pública do servidor de volta
                 saida.writeObject(chavesServidor.getPublic());
                 saida.flush();
-                System.out.println("Troca de chaves RSA concluída com o servidor na porta " + cliente.getLocalPort() + " para deviceId=" + idDispositivo);
+                System.out.println("Troca de chaves RSA concluída com " + cliente.getInetAddress().getHostAddress());
             }
             // === CASO B: Recebimento de Localização (Recebeu byte[]) ===
             else if (entrada2 instanceof byte[]) {

@@ -9,7 +9,7 @@ public class Microdispositivo3 extends ImplMicrodispositivo {
 
     public static void main(String[] args) {
         Microdispositivo3 m = new Microdispositivo3(
-                "127.0.0.3",
+                "192.168.0.8",
                 5003,
                 2000,
                 "3",
