@@ -52,7 +52,7 @@ public class AceitaCliente implements Runnable {
                 // Envia chave pública do servidor de volta
                 saida.writeObject(chavesServidor.getPublic());
                 saida.flush();
-                System.out.println("Troca de chaves RSA concluída com " + cliente.getInetAddress().getHostAddress());
+                System.out.println("Troca de chaves RSA concluída com " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
             }
             // === CASO B: Recebimento de Localização (Recebeu byte[]) ===
             else if (entrada2 instanceof byte[]) {

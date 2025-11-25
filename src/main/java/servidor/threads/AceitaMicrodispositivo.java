@@ -64,7 +64,7 @@ public class AceitaMicrodispositivo implements Runnable {
                 saida.writeObject(chavesServidor.getPublic());
                 saida.flush();
 
-                System.out.println("Troca de chaves RSA concluída com " + cliente.getInetAddress().getHostAddress());
+                System.out.println("Troca de chaves RSA concluída com " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
 
 
             } else if (entrada2 instanceof byte[]) {
@@ -93,9 +93,9 @@ public class AceitaMicrodispositivo implements Runnable {
             }
             }
         } catch (EOFException e) {
-            System.out.println("Conexão encerrada pelo cliente " + cliente.getInetAddress());
+            System.out.println("Conexão encerrada pelo cliente " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
         } catch (IOException e) {
-            System.err.println("Erro ao estabelecer conexao com o cliente: " + cliente.getInetAddress() + " - " + e.getMessage());
+            System.err.println("Erro ao estabelecer conexao com o cliente: " + cliente.getInetAddress() + ":" + cliente.getPort() + " - " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Erro inesperado ao cifrar/enviar a localização: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             e.printStackTrace();

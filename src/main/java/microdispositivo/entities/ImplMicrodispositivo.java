@@ -87,7 +87,7 @@ public abstract class ImplMicrodispositivo {
 
             entradaBorda = new ObjectInputStream(socketBorda.getInputStream());
 
-            System.out.println("Conexão persistente estabelecida com o servidor de borda: " + portaServidorDeBorda);
+            System.out.println("Conexão persistente estabelecida com o servidor de borda: " + socketBorda.getInetAddress().getHostAddress() + ":" + socketBorda.getPort());
 
             return true;
         } catch (IOException e) {
@@ -303,7 +303,7 @@ public abstract class ImplMicrodispositivo {
             KeyPair kp = new KeyPair(chavePublicaServidor, chavePrivadaLocal);
             chavesServidor.put(portaServidor, kp);
 
-            System.out.println("Troca de chaves RSA concluída com o servidor na porta " + portaServidor);
+            System.out.println("Troca de chaves RSA concluída com o servidor na porta " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
         }  catch (ClassNotFoundException e) {
             System.err.println("Erro ao receber chave do servidor! " + e.getMessage());
             e.printStackTrace();
