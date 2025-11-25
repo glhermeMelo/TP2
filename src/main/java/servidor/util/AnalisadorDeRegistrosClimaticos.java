@@ -1,0 +1,58 @@
+package servidor.util;
+
+import entities.RegistroClimatico;
+
+public  class AnalisadorDeRegistrosClimaticos {
+    private static final Double MAXIMOCO2 = 400D;
+    private static final Double MAXIMOCO = 9D;
+    private static final Double MAXIMONO2 = 200D;
+    private static final Double MAXIMOSO2 = 20D;
+    private static final Double MAXIMOPM2_5 = 25D;
+    private static final Double MAXIMOPM10 = 50D;
+    private static final Double MINIMOUMIDADE = 25D;
+    private static final Double MAXIMOTEMPERATURA = 32D;
+    private static final Double MINIMOTEMPERATURA = 20D;
+    private static final Double MAXIMORUIDO = 40D;
+    private static final Double MAXIMORADIACAOUV = 2D;
+
+    public static void analisarRegistroClimatico(RegistroClimatico registroClimatico) {
+        double co2 = Double.parseDouble(registroClimatico.cO2());
+        double co = Double.parseDouble(registroClimatico.cO());
+        double no2 = Double.parseDouble(registroClimatico.nO2());
+        double so2 = Double.parseDouble(registroClimatico.sO2());
+        double pm25 = Double.parseDouble(registroClimatico.pM2_5());
+        double pm10 = Double.parseDouble(registroClimatico.pM10());
+        double umidade = Double.parseDouble(registroClimatico.umidade());
+        double temperatura = Double.parseDouble(registroClimatico.temperatura());
+        double ruido = Double.parseDouble(registroClimatico.ruido());
+        double uv = Double.parseDouble(registroClimatico.radiacaoUV());
+
+        String id = registroClimatico.idDispositivo();
+        String localizacao = registroClimatico.localizacao();
+
+        // Qualidade do Ar
+        if (co2 > MAXIMOCO2) emitirAlerta(id, localizacao, "CO2 Crítico", co2 + " ppm");
+        if (co > MAXIMOCO)   emitirAlerta(id, localizacao, "Nível de CO Alto", co + " ppm");
+        if (no2 > MAXIMONO2) emitirAlerta(id, localizacao, "Poluição NO2 Alta", no2 + " µg/m³");
+        if (so2 > MAXIMOSO2) emitirAlerta(id, localizacao, "Poluição SO2 Alta", so2 + " µg/m³");
+        if (pm25 > MAXIMOPM2_5)  emitirAlerta(id, localizacao, "Partículas Finas (PM2.5) Altas", pm25 + " µg/m³");
+        if (pm10 > MAXIMOPM10)   emitirAlerta(id, localizacao, "Partículas Inaláveis (PM10) Altas", pm10 + " µg/m³");
+
+        // Condições Ambientais
+        if (temperatura > MAXIMOTEMPERATURA) emitirAlerta(id, localizacao, "Calor Extremo", temperatura + " °C");
+        if (temperatura < MINIMOTEMPERATURA) emitirAlerta(id, localizacao, "Frio Intenso", temperatura + " °C");
+        if (umidade < MINIMOUMIDADE)  emitirAlerta(id, localizacao, "Baixa Umidade", umidade + "%");
+
+        // Outros
+        if (ruido > MAXIMORUIDO) emitirAlerta(id, localizacao, "Poluição Sonora", ruido + " dB");
+        if (uv > MAXIMORADIACAOUV) emitirAlerta(id, localizacao, "Radiação UV Perigosa", "Índice " + uv);
+    }
+
+    private static void emitirAlerta(String id, String local, String tipoAlerta, String valor) {
+        System.err.println("=====================================================");
+        System.err.println("[ALERTA] " + tipoAlerta.toUpperCase());
+        System.err.println("Dispositivo: " + id + " | Local: " + local);
+        System.err.println("Valor medido: " + valor);
+        System.err.println("=====================================================");
+    }
+}

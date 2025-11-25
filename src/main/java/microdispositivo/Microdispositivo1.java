@@ -1,6 +1,6 @@
 package microdispositivo;
 
-import microdispositivo.entities.ImplMicrodispositivo;
+import entities.ImplMicrodispositivo;
 
 public class Microdispositivo1 extends ImplMicrodispositivo {
     public Microdispositivo1(String ipMicrodispositivo, int portaMicrodispositivo, long intervaloMillisGeracao, String idDispositivo, int portaServidorDescoberta, String localizacaoMicrodispositivo) {

@@ -1,6 +1,8 @@
 package servidor.threads;
 
-import microdispositivo.util.GeradorDeLeituras;
+import com.google.gson.Gson;
+import entities.RegistroClimatico;
+import servidor.util.AnalisadorDeRegistrosClimaticos;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -11,16 +13,17 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AceitaMicrodispositivo implements Runnable {
     private final Socket cliente;
-    private final ConcurrentHashMap<Integer, List<GeradorDeLeituras>> mapaDeRegistrosClimaticos;
+    private final ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos;
     private final ConcurrentHashMap<String, KeyPair> chavesClientes;
     private int portaDatacenter;
 
-    public AceitaMicrodispositivo(Socket cliente, ConcurrentHashMap<Integer, List<GeradorDeLeituras>> mapaDeRegistrosClimaticos,
+    public AceitaMicrodispositivo(Socket cliente, ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos,
                                   ConcurrentHashMap<String, KeyPair> chavesClientes) {
         this.cliente = cliente;
         this.chavesClientes = chavesClientes;
@@ -102,11 +105,6 @@ public class AceitaMicrodispositivo implements Runnable {
         }
     }
 
-
-    private void analisaRegistroClimatico() {
-
-    }
-
     private void descriptografarRegistro(String idDispositivo,byte[] chaveSessao, byte[] nonce, byte[] mensagemCifrada) {
         try {
 
@@ -131,10 +129,29 @@ public class AceitaMicrodispositivo implements Runnable {
             byte[] bytesRegistroClimatico = chacha.doFinal(mensagemCifrada);
 
             String registroClimatico = new String(bytesRegistroClimatico);
-            System.out.println(registroClimatico);
+            salvarRegistroClimatico(registroClimatico);
         } catch (Exception e) {
             System.err.println("Erro ao decifrar ChaCha20 (" + e.getClass().getSimpleName() + "): " + e.getMessage());
         }
+    }
+
+    private synchronized void salvarRegistroClimatico(String registroClimatico) {
+        Gson gson = new Gson();
+
+        //Instancia novo registro
+        RegistroClimatico registro = gson.fromJson(registroClimatico,  RegistroClimatico.class);
+
+        if (registro != null) {
+            AnalisadorDeRegistrosClimaticos.analisarRegistroClimatico(registro);
+        } else {
+            System.err.println("Erro ao instanciar o registro climatico");
+            return;
+        }
+
+        //Pega id e checa se existe no mapa ou nao
+        int idDispositivo = Integer.parseInt(registro.idDispositivo());
+
+        mapaDeRegistrosClimaticos.computeIfAbsent(idDispositivo, k -> new ArrayList<>()).add(registroClimatico);
     }
 
     private KeyPair gerarParDeChavesRSA() {

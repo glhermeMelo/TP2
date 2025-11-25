@@ -1,4 +1,4 @@
-package microdispositivo.entities;
+package entities;
 
 public record RegistroClimatico(
         String localizacao,

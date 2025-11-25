@@ -1,4 +1,4 @@
-package microdispositivo.entities;
+package entities;
 
 import microdispositivo.util.GeradorDeLeituras;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;

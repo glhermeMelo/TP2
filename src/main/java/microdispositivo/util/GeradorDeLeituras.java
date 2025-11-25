@@ -1,7 +1,7 @@
 package microdispositivo.util;
 
 import com.google.gson.Gson;
-import microdispositivo.entities.RegistroClimatico;
+import entities.RegistroClimatico;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.ThreadLocalRandom;

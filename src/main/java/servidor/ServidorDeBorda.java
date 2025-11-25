@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServidorDeBorda extends ImplServidor {
-    private ConcurrentHashMap<Integer, List<GeradorDeLeituras>> mapaDeRegistrosClimaticos;
+    private ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos;
     private ConcurrentHashMap<String, KeyPair> chavesClientes;
 
     public ServidorDeBorda(int porta, String ip, String nome) {
@@ -97,11 +97,11 @@ public class ServidorDeBorda extends ImplServidor {
         this.serverSocket = serverSocket;
     }
 
-    public ConcurrentHashMap<Integer, List<GeradorDeLeituras>> getMapaDeRegistrosClimaticos() {
+    public ConcurrentHashMap<Integer, List<String>> getMapaDeRegistrosClimaticos() {
         return mapaDeRegistrosClimaticos;
     }
 
-    public void setMapaDeRegistrosClimaticos(ConcurrentHashMap<Integer, List<GeradorDeLeituras>> mapaDeRegistrosClimaticos) {
+    public void setMapaDeRegistrosClimaticos(ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos) {
         this.mapaDeRegistrosClimaticos = mapaDeRegistrosClimaticos;
     }
 
