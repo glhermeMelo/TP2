@@ -1,4 +1,4 @@
-package microdispositivo.util;
+package microdispositivo.threads;
 
 import com.google.gson.Gson;
 import entities.RegistroClimatico;

@@ -1,6 +1,6 @@
-package entities;
+package microdispositivo;
 
-import microdispositivo.util.GeradorDeLeituras;
+import microdispositivo.threads.GeradorDeLeituras;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.*;
