@@ -4,16 +4,16 @@ import entities.RegistroClimatico;
 
 public  class AnalisadorDeRegistrosClimaticos {
     private static final Double MAXIMOCO2 = 400D;
-    private static final Double MAXIMOCO = 9D;
-    private static final Double MAXIMONO2 = 200D;
-    private static final Double MAXIMOSO2 = 20D;
-    private static final Double MAXIMOPM2_5 = 25D;
-    private static final Double MAXIMOPM10 = 50D;
+    private static final Double MAXIMOCO = 11D;
+    private static final Double MAXIMONO2 = 240D;
+    private static final Double MAXIMOSO2 = 40D;
+    private static final Double MAXIMOPM2_5 = 50D;
+    private static final Double MAXIMOPM10 = 100D;
     private static final Double MINIMOUMIDADE = 25D;
     private static final Double MAXIMOTEMPERATURA = 32D;
     private static final Double MINIMOTEMPERATURA = 20D;
-    private static final Double MAXIMORUIDO = 40D;
-    private static final Double MAXIMORADIACAOUV = 2D;
+    private static final Double MAXIMORUIDO = 55D;
+    private static final Double MAXIMORADIACAOUV = 5D;
 
     public static void analisarRegistroClimatico(RegistroClimatico registroClimatico) {
         double co2 = Double.parseDouble(registroClimatico.cO2());

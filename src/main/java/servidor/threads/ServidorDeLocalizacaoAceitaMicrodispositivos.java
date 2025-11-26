@@ -8,14 +8,14 @@ import java.net.Socket;
 import java.security.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class AceitaCliente implements Runnable {
+public class ServidorDeLocalizacaoAceitaMicrodispositivos implements Runnable {
     private final Socket cliente;
     protected final ConcurrentHashMap<String, KeyPair> chavesClientes;
     protected final ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda;
 
-    public AceitaCliente(Socket cliente,
-                         ConcurrentHashMap<String, KeyPair> chavesClientes,
-                         ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda) {
+    public ServidorDeLocalizacaoAceitaMicrodispositivos(Socket cliente,
+                                                        ConcurrentHashMap<String, KeyPair> chavesClientes,
+                                                        ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda) {
         this.cliente = cliente;
         this.chavesClientes = chavesClientes;
         this.localizacaoServidoresDeBorda = localizacaoServidoresDeBorda;

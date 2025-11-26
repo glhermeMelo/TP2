@@ -1,6 +1,6 @@
 package servidor;
 
-import servidor.threads.AceitaCliente;
+import servidor.threads.ServidorDeLocalizacaoAceitaMicrodispositivos;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -25,7 +25,7 @@ public class ServidorLocalizacao extends ImplServidor {
             while (isActive) {
                 try {
                     Socket cliente = serverSocket.accept();
-                    AceitaCliente aceitaCliente = new AceitaCliente(cliente, chavesClientes, localizacaoServidoresDeBorda);
+                    ServidorDeLocalizacaoAceitaMicrodispositivos aceitaCliente = new ServidorDeLocalizacaoAceitaMicrodispositivos(cliente, chavesClientes, localizacaoServidoresDeBorda);
                     Thread thread = new Thread(aceitaCliente);
                     thread.start();
                 } catch (IOException acceptEx) {
@@ -53,6 +53,7 @@ public class ServidorLocalizacao extends ImplServidor {
         localizacaoServidoresDeBorda.put("Nova Betania", 7000);
         localizacaoServidoresDeBorda.put("Vingt Rosado", 7000);
 
-        ServidorLocalizacao servidorLocalizacao = new ServidorLocalizacao(6000, "localhost",  "ServidorLocalizacao", localizacaoServidoresDeBorda);
+        ServidorLocalizacao servidorLocalizacao = new ServidorLocalizacao(
+                6000, "localhost",  "ServidorLocalizacao", localizacaoServidoresDeBorda);
     }
 }

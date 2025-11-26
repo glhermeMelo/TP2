@@ -4,11 +4,13 @@ import microdispositivo.util.GeradorDeLeituras;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.*;
-import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
-import java.net.Socket;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.*;
 import java.security.*;
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,11 +23,10 @@ public abstract class ImplMicrodispositivo {
     protected LocalDateTime data;
     protected GeradorDeLeituras geradorDeLeituras;
     private Thread threadGeradora;
+    private DatagramSocket socketUDP;
+
     private final int portaServidorLocalizacao;
     private int portaServidorDeBorda;
-    private Socket socketBorda;                     // conexão persistente
-    private ObjectOutputStream saidaBorda;          // criar uma vez e reutilizar
-    private ObjectInputStream entradaBorda;         // se precisar receber
 
     //HashMap para armazenar a porta dos servidores de localizacao e as chaves
     protected ConcurrentHashMap<Integer, KeyPair> chavesServidorLocalizacao;
@@ -43,6 +44,13 @@ public abstract class ImplMicrodispositivo {
         chavesServidorDeBorda = new ConcurrentHashMap<>();
 
         geradorDeLeituras = new GeradorDeLeituras(idDispositivo, intervaloMillis, localizacao);
+
+        try {
+            this.socketUDP = new DatagramSocket();
+        } catch (SocketException e) {
+            System.err.println("Erro ao abrir socket UDP! " + e.getMessage());
+        }
+
         rodar();
     }
 
@@ -60,9 +68,6 @@ public abstract class ImplMicrodispositivo {
         //Troca as chaves com o servidor de borda
         trocarChavesRSA(portaServidorDeBorda, chavesServidorDeBorda);
 
-        //Socket estabelecido com servidor de borda
-        conectarServidorBorda();
-
         if (threadGeradora == null || !threadGeradora.isAlive()) {
             threadGeradora = new Thread(geradorDeLeituras);
             threadGeradora.start();
@@ -73,28 +78,6 @@ public abstract class ImplMicrodispositivo {
         //Nova Thread Deamon para ler os valores gerados pelo Gerador e criptografar
         Thread monitora = geraThreadMonitora();
         monitora.start();
-    }
-
-    private boolean conectarServidorBorda() {
-        if (socketBorda != null && !socketBorda.isClosed() && saidaBorda != null) {
-            return true;
-        }
-
-        try {
-            socketBorda = new Socket(ip, portaServidorDeBorda);
-            saidaBorda = new ObjectOutputStream(socketBorda.getOutputStream());
-            saidaBorda.flush();
-
-            entradaBorda = new ObjectInputStream(socketBorda.getInputStream());
-
-            System.out.println("Conexão persistente estabelecida com o servidor de borda: " + socketBorda.getInetAddress().getHostAddress() + ":" + socketBorda.getPort());
-
-            return true;
-        } catch (IOException e) {
-            System.err.println("Erro ao estabelecer conexao com servidor de borda: " + portaServidorDeBorda + " - " + e.getMessage());
-            socketBorda = null;
-            return false;
-        }
     }
 
     private Thread geraThreadMonitora() {
@@ -111,16 +94,9 @@ public abstract class ImplMicrodispositivo {
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } finally {
-                if (socketBorda != null) {
-                    try {
-                        socketBorda.close();
-                    } catch (IOException e) {
-                        System.err.println("Erro ao encerrar conexão com servidor de borda: " + portaServidorDeBorda + " - " + e.getMessage());
-                    }
-                }
             }
         });
+
         monitora.setDaemon(true);
         return monitora;
     }
@@ -137,32 +113,6 @@ public abstract class ImplMicrodispositivo {
             }
         }
 
-        if (saidaBorda != null) {
-            try {
-                saidaBorda.close();
-            } catch (IOException e) {
-                System.err.println("Erro ao fechar saidaBorda: " + e.getMessage());
-            }
-            saidaBorda = null;
-        }
-
-        if (entradaBorda != null) {
-            try {
-                entradaBorda.close();
-            } catch (IOException e) {
-                System.err.println("Erro ao fechar entradaBorda: " + e.getMessage());
-            }
-            entradaBorda = null;
-        }
-
-        if (socketBorda != null) {
-            try {
-                socketBorda.close();
-            } catch (IOException e) {
-                System.err.println("Erro ao fechar socketBorda: " + e.getMessage());
-            }
-            socketBorda = null;
-        }
     }
 
     protected void criptografarLocalizacao() {
@@ -313,11 +263,6 @@ public abstract class ImplMicrodispositivo {
     }
 
     protected void enviarLeituraAoServidorDeBorda(String textoPlano) {
-        if (saidaBorda == null) {
-            System.err.println("Stream de saída não inicializado. Leitura não enviada.");
-            return;
-        }
-
         KeyPair chaveBorda = chavesServidorDeBorda.get(portaServidorDeBorda);
 
         if (chaveBorda == null) {
@@ -351,13 +296,22 @@ public abstract class ImplMicrodispositivo {
             rsa.init(Cipher.ENCRYPT_MODE, chavePublicaBorda);
             byte[] bytesChaveSessaoEncriptada = rsa.doFinal(bytesChaveSessao);
 
-            synchronized (saidaBorda) {
-                saidaBorda.writeObject(idDispositivo);
-                saidaBorda.writeObject(bytesChaveSessaoEncriptada);
-                saidaBorda.writeObject(nonce);
-                saidaBorda.writeObject(bytesMensagemEncriptada);
-                saidaBorda.flush();
-            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream saida = new ObjectOutputStream(baos);
+
+            saida.writeObject(idDispositivo);
+            saida.writeObject(bytesChaveSessaoEncriptada);
+            saida.writeObject(nonce);
+            saida.writeObject(bytesMensagemEncriptada);
+            saida.flush();
+
+            byte[] mensagem = baos.toByteArray();
+
+            InetAddress enderecoBorda = InetAddress.getByName(ip);
+            DatagramPacket pacote = new DatagramPacket(mensagem, mensagem.length, enderecoBorda, portaServidorDeBorda);
+
+            socketUDP.send(pacote);
+
         } catch (IOException e) {
             System.err.println("Erro ao enviar leitura ao servidor de borda: " + portaServidorDeBorda + " - " + e.getMessage());
         } catch (NoSuchAlgorithmException e) {
