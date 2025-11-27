@@ -308,8 +308,8 @@ public abstract class ImplMicrodispositivo {
 
             InetAddress enderecoBorda = InetAddress.getByName(ip);
             DatagramPacket pacote = new DatagramPacket(mensagem, mensagem.length, enderecoBorda, portaServidorDeBorda);
-
-            System.out.println("Dispositivo: " + idDispositivo + ", enviando leitura ao servidor de borda: " + socketUDP.getInetAddress().getHostName() + ":" + socketUDP.getPort());
+            System.out.println("Dispositivo: " + idDispositivo + ", enviando leitura ao servidor de borda: "
+                    + enderecoBorda.getHostAddress() + ":" + portaServidorDeBorda);
             socketUDP.send(pacote);
 
         } catch (IOException e) {
