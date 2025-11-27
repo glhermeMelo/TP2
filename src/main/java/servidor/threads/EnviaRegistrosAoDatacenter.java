@@ -1,13 +1,16 @@
 package servidor.threads;
 
 import javax.crypto.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.c;
 
 public class EnviaRegistrosAoDatacenter implements Runnable {
     private final ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos;
@@ -73,7 +76,7 @@ public class EnviaRegistrosAoDatacenter implements Runnable {
                         saida.writeObject(byesHashMapCifrado);
                         saida.flush();
 
-                        System.out.println("HashMap enviado ao Datacenter");
+                        System.out.println(nomeServidorDeBorda + " enviando HashMap ao Datacenter " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
                     }
 
                     Thread.sleep(escritaMillis);

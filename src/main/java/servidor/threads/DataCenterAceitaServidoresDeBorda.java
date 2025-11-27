@@ -1,20 +1,27 @@
 package servidor.threads;
 
+import com.google.gson.Gson;
+import entities.RegistroClimatico;
+
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.Socket;
 import java.security.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataCenterAceitaServidoresDeBorda implements Runnable {
     private final Socket cliente;
-    private ConcurrentHashMap<Integer, List<String>> dadosGlobais;
+    private ConcurrentHashMap<Integer, List<RegistroClimatico>> dadosGlobais;
     private ConcurrentHashMap<String, KeyPair> chavesClientes;
     private boolean isActive = true;
 
-    public DataCenterAceitaServidoresDeBorda(Socket cliente, ConcurrentHashMap<String,KeyPair> chavesClientes, ConcurrentHashMap<Integer, List<String>> dadosGlobais) {
+    public DataCenterAceitaServidoresDeBorda(
+            Socket cliente,
+            ConcurrentHashMap<String,KeyPair> chavesClientes,
+            ConcurrentHashMap<Integer, List<RegistroClimatico>> dadosGlobais) {
         this.cliente = cliente;
         this.dadosGlobais = dadosGlobais;
         this.chavesClientes = chavesClientes;
@@ -95,10 +102,26 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
     }
 
     private synchronized void atualizarDadosGlobais(ConcurrentHashMap<Integer, List<String>> mapaRecebido) {
-        mapaRecebido.forEach((k, v) -> dadosGlobais.merge(k, v, (v1, v2) -> {
-            v1.addAll(v2);
-            return v1;
-        }));
+        Gson gson = new Gson();
+
+        mapaRecebido.forEach((idDispositivo, lista) -> {
+            List<RegistroClimatico> novaListaRegistro = new ArrayList<>();
+
+            for(String registroJson : lista) {
+                try {
+                    RegistroClimatico registro = gson.fromJson(registroJson, RegistroClimatico.class);
+                    novaListaRegistro.add(registro);
+                } catch (Exception e) {
+                    System.err.println("Erro ao converter de String para registro: " + registroJson + " - " + e.getMessage());
+                }
+            }
+
+            dadosGlobais.merge(idDispositivo, novaListaRegistro, (listaRegistro, novaLista) -> {
+                listaRegistro.addAll(novaLista);
+                return listaRegistro;
+            });
+
+        });
     }
 
     private ConcurrentHashMap<Integer, List<String>> recriarHashMap(byte[] bytesHashMap) {

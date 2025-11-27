@@ -1,5 +1,6 @@
 package servidor;
 
+import entities.RegistroClimatico;
 import servidor.threads.DataCenterAceitaServidoresDeBorda;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataCenter extends ImplServidor {
-    private ConcurrentHashMap<Integer, List<String>> dadosGlobais;
+    private ConcurrentHashMap<Integer, List<RegistroClimatico>> dadosGlobais;
     private List<Thread> listaConexoes;
 
     public DataCenter(int porta, String ip, String nome) {

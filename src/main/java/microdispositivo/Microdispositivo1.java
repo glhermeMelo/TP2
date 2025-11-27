@@ -7,7 +7,7 @@ public class Microdispositivo1 extends ImplMicrodispositivo {
 
     public static void main(String[] args) {
         Microdispositivo1 m = new Microdispositivo1(
-                "localhost",
+                "10.215.4.132",
                 5001,
                 2000,
                 "1",

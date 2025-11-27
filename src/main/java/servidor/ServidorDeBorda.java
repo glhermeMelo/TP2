@@ -47,7 +47,9 @@ public class ServidorDeBorda extends ImplServidor {
             while (isActive) {
                 try {
                     Socket cliente = serverSocket.accept();
+                    System.out.println("Servidor: " + nome + " tentando se conectar com: " + cliente.getInetAddress().getHostName() + ":" + cliente.getPort());
                     ServidorDeBordaAceitaMicrodispositivo aceitaMicrodispositivo = new ServidorDeBordaAceitaMicrodispositivo(cliente, chavesClientes);
+                    System.out.println("Servidor: " + nome +  " conectado com cliente: " + cliente.getInetAddress().getHostName() + ":" + cliente.getPort());
                     Thread thread = new Thread(aceitaMicrodispositivo);
                     thread.start();
                 } catch (IOException acceptEx) {
@@ -68,7 +70,6 @@ public class ServidorDeBorda extends ImplServidor {
             }
             System.out.println(nome + " finalizado.");
         }
-
     }
 
     public void parar() {

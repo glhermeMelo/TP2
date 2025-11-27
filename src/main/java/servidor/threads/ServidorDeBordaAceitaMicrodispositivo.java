@@ -51,7 +51,6 @@ public class ServidorDeBordaAceitaMicrodispositivo implements Runnable {
                 // Envia chave pública do servidor
                 saida.writeObject(chavesClientes.get(idDispositivo).getPublic());
                 saida.flush();
-                System.out.println("Handshake TCP concluído com dispositivo: " + idDispositivo);
             }
         } catch (EOFException e) {
             // Conexão encerrada normalmente

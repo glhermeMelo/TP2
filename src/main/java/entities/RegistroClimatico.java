@@ -79,4 +79,23 @@ public record RegistroClimatico(
     public String radiacaoUV() {
         return radiacaoUV;
     }
+
+    @Override
+    public String toString() {
+        return "[" +
+                "ID:'" + idDispositivo +
+                ", Local: '" + localizacao +
+                ", Hora: " + horario +
+                ", CO2: " + cO2 +
+                ", CO: " + cO +
+                ", NO2: " + nO2 +
+                ", SO2: " + sO2 +
+                ", PM2.5: " + pM2_5 +
+                ", PM10: " + pM10 +
+                ", umidade: " + umidade + "%" +
+                ", temperatura: " + temperatura + "°C" +
+                ", ruído: " + ruido +
+                ", radiacao uv: " + radiacaoUV +
+                ']';
+    }
 }

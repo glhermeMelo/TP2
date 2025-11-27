@@ -85,7 +85,6 @@ public abstract class ImplMicrodispositivo {
             try {
                 while (geradorDeLeituras.isActive()) {
                     String leituraJson = geradorDeLeituras.getLeitura();
-                    System.out.println(leituraJson);
 
                     enviarLeituraAoServidorDeBorda(leituraJson);
 
@@ -310,6 +309,7 @@ public abstract class ImplMicrodispositivo {
             InetAddress enderecoBorda = InetAddress.getByName(ip);
             DatagramPacket pacote = new DatagramPacket(mensagem, mensagem.length, enderecoBorda, portaServidorDeBorda);
 
+            System.out.println("Dispositivo: " + idDispositivo + ", enviando leitura ao servidor de borda: " + socketUDP.getInetAddress().getHostName() + ":" + socketUDP.getPort());
             socketUDP.send(pacote);
 
         } catch (IOException e) {
