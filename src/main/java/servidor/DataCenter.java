@@ -1,45 +1,99 @@
 package servidor;
 
+import servidor.threads.CalculaValorMaximo;
+import servidor.threads.CalculaValoresMedios;
 import entities.RegistroClimatico;
 import servidor.threads.DataCenterAceitaServidoresDeBorda;
+import servidorRMI.IMonitoramentoRMI;
+import servidorRMI.ImplMonitoramentoClimatico;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.KeyPair;
+import java.rmi.AccessException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataCenter extends ImplServidor {
     private ConcurrentHashMap<Integer, List<RegistroClimatico>> dadosGlobais;
-    private List<Thread> listaConexoes;
+    private List<Thread> listaThreads;
+    private CalculaValorMaximo threadMaximos;
+    private CalculaValoresMedios threadMedios;
 
     public DataCenter(int porta, String ip, String nome) {
         super(porta, ip, nome);
         dadosGlobais = new ConcurrentHashMap<>();
-        listaConexoes = new ArrayList<>();
+        listaThreads = new ArrayList<>();
+        this.threadMaximos = new CalculaValorMaximo(dadosGlobais, 5000);
+        this.threadMedios = new CalculaValoresMedios(dadosGlobais, 5000);
         rodar();
     }
 
     @Override
     public void rodar() {
         System.out.println("DataCenter iniciado na porta " + this.porta);
+
         try (ServerSocket serverSocket = new ServerSocket(porta)) {
+            Thread calculadoraMaxima = new Thread(threadMaximos);
+            calculadoraMaxima.start();
+
+            Thread calculadoraMedio = new Thread(threadMedios);
+            calculadoraMedio.start();
+
+            listaThreads.add(calculadoraMaxima);
+            listaThreads.add(calculadoraMedio);
+
+            implementarRMI();
+
             while (isActive) {
                 Socket cliente = serverSocket.accept();
-                Thread thread = new Thread(new DataCenterAceitaServidoresDeBorda(cliente, chavesClientes, dadosGlobais));
-                thread.start();
-                listaConexoes.add(thread);
+                Thread aceitadora = new Thread(new DataCenterAceitaServidoresDeBorda(cliente, chavesClientes, dadosGlobais));
+                aceitadora.start();
+                calculadoraMaxima.join();
+                calculadoraMedio.join();
+                aceitadora.join();
+
+                listaThreads.add(aceitadora);
             }
         } catch (IOException e) {
             if (isActive) {
                 System.err.println("Erro ao aceitar conexão: " + e.getMessage());
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void implementarRMI() {
+        try {
+            ImplMonitoramentoClimatico refObjRemoto = new ImplMonitoramentoClimatico(threadMedios, threadMaximos);
+
+            IMonitoramentoRMI skeleton = (IMonitoramentoRMI) UnicastRemoteObject
+                    .exportObject(refObjRemoto, 0);
+
+            LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
+
+            Registry monitoramentoClimatico = LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
+
+            monitoramentoClimatico.rebind("MonitoramentoClimatico", refObjRemoto);
+
+            System.err.println("MonitoramentoClimatico inicializado com sucesso!");
+        } catch (AccessException e) {
+            System.err.println("Erro ao acessar o registro remoto: " + e.getMessage());
+        } catch (RemoteException e) {
+            System.err.println("Erro ao inicializar serviço remoto: " + e.getMessage());
         }
     }
 
     public static void main(String[] args) {
-        DataCenter dataCenter = new DataCenter(8000, "localhost", "DT1");
+        DataCenter dataCenter = new DataCenter(
+                8000,
+                "localhost",
+                "DT-1");
     }
 }

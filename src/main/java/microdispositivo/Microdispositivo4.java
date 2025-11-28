@@ -10,7 +10,7 @@ public class Microdispositivo4 extends ImplMicrodispositivo {
                 "192.168.0.8",
                 5004,
                 2000,
-                "4",
+                "microdispositivo-4",
                 6000,
                 "Vingt Rosado");
     }

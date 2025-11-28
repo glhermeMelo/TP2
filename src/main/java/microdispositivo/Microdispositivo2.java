@@ -10,7 +10,7 @@ public class Microdispositivo2 extends ImplMicrodispositivo {
                 "localhost",
                 5002,
                 2000,
-                "2",
+                "microdispositivo-2",
                 6000,
                 "Centro");
     }

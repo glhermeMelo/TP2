@@ -10,7 +10,7 @@ public class Microdispositivo3 extends ImplMicrodispositivo {
                 "192.168.0.8",
                 5003,
                 2000,
-                "3",
+                "microdispositivo-3",
                 6000,
                 "Nova Betania");
     }

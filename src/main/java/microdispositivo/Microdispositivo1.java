@@ -10,7 +10,7 @@ public class Microdispositivo1 extends ImplMicrodispositivo {
                 "192.168.0.8",
                 5001,
                 2000,
-                "1",
+                "microdispositivo-1",
                 6000,
                 "Alto");
     }

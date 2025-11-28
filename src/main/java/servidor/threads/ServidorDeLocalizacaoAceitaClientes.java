@@ -8,17 +8,20 @@ import java.net.Socket;
 import java.security.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServidorDeLocalizacaoAceitaMicrodispositivos implements Runnable {
+public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
     private final Socket cliente;
     protected final ConcurrentHashMap<String, KeyPair> chavesClientes;
     protected final ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda;
+    protected final ConcurrentHashMap<String, String> servicosRMI;
 
-    public ServidorDeLocalizacaoAceitaMicrodispositivos(Socket cliente,
-                                                        ConcurrentHashMap<String, KeyPair> chavesClientes,
-                                                        ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda) {
+    public ServidorDeLocalizacaoAceitaClientes(Socket cliente,
+                                               ConcurrentHashMap<String, KeyPair> chavesClientes,
+                                               ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda,
+                                               ConcurrentHashMap<String, String> servicosRMI) {
         this.cliente = cliente;
         this.chavesClientes = chavesClientes;
         this.localizacaoServidoresDeBorda = localizacaoServidoresDeBorda;
+        this.servicosRMI = servicosRMI;
     }
 
     @Override
@@ -39,10 +42,20 @@ public class ServidorDeLocalizacaoAceitaMicrodispositivos implements Runnable {
 
             String idDispositivo = (String) entrada1;
 
-            // 2 - Ler segundo objeto (Define se é Handshake ou Payload)
+            // 2 - Ler segundo objeto (Define se é cliente rmi ou microdispositivo)
             Object entrada2 = entrada.readObject();
 
-            // === CASO A: Handshake (Recebeu PublicKey) ===
+            // Caso ClienteRMI
+            if(entrada2 instanceof String ){
+                String nomeServico = (String) entrada2;
+
+                System.out.println("Cliente RMI '" + idDispositivo + "' solicitando serviço: " + nomeServico);
+
+                tratarClienteRMI(nomeServico, saida);
+                return;
+            }
+
+            // Caso Microdispositivo
             if (entrada2 instanceof PublicKey) {
                 PublicKey chavePublicaCliente = (PublicKey) entrada2;
 
@@ -127,6 +140,22 @@ public class ServidorDeLocalizacaoAceitaMicrodispositivos implements Runnable {
 
         saida.writeObject(portaBorda);
         saida.flush();
+    }
+
+    private void tratarClienteRMI(String nomeServico, ObjectOutputStream saida) {
+        String portaServico = servicosRMI.get(nomeServico);
+        try {
+            if (portaServico != null) {
+                saida.writeObject(portaServico);
+                System.out.println("Endereco de: " + nomeServico + ", enviado ao cliente: " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
+            } else {
+                saida.writeObject("ERRO: Serviço não encontrado");
+                System.err.println("Serviço '" + nomeServico + "' não encontrado.");
+            }
+            saida.flush();
+        } catch (IOException e) {
+            System.err.println("Erro ao localizar servico: " + nomeServico + "! " + e.getMessage());
+        }
     }
 
     private byte[] descriptografarRSA(byte[] bytesChaveSessao, PrivateKey chavePrivada) {

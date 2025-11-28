@@ -17,6 +17,12 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
     private ConcurrentHashMap<Integer, List<RegistroClimatico>> dadosGlobais;
     private ConcurrentHashMap<String, KeyPair> chavesClientes;
     private boolean isActive = true;
+    private ObjectInputStream entrada;
+    private ObjectOutputStream saida;
+
+    //Dados do cliente
+    private String idCliente;
+    private SecretKey chaveSecretaCliente;
 
     public DataCenterAceitaServidoresDeBorda(
             Socket cliente,
@@ -29,24 +35,50 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
 
     @Override
     public void run() {
-        ObjectInputStream entrada = null;
-        ObjectOutputStream saida = null;
-
         try {
             entrada = new ObjectInputStream(cliente.getInputStream());
             saida = new ObjectOutputStream(cliente.getOutputStream());
+            saida.flush();
 
+            if (autenticaCliente()) {
+                System.out.println(cliente.getInetAddress().getHostName() + ":" + cliente.getPort() + " autenticado com sucesso");
+                processarDados();
+            } else {
+                System.err.println(cliente.getInetAddress().getHostName() + ":" + cliente.getPort() + " é um cliente inválido");
+            }
+        } catch (EOFException e) {
+            System.out.println("Conexão encerrada pelo cliente.");
+        } catch (IOException e) {
+            System.err.println("Erro de I/O com cliente: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro desconhecido: " + e.getMessage());
+        } finally {
+            try {
+                if (cliente != null && !cliente.isClosed()) {
+                    cliente.close();
+                }
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    private synchronized boolean autenticaCliente() {
+        try {
             // 1 - Ler nome do dispositivo
             Object entrada1 = entrada.readObject();
             if (!(entrada1 instanceof String)) {
-                System.err.println("Erro ao receber entrada");
+                System.err.println("Erro ao receber id do cliente: " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
+                return false;
             }
 
-            String idCliente = (String) entrada1;
-            System.out.println("Conexao iniciada com: " + idCliente);
+            this.idCliente = (String) entrada1;
 
             // 2 - gera o recupera chaves para o cliente
             KeyPair chavesCliente = chavesClientes.computeIfAbsent(idCliente, k -> gerarParDeChavesRSA());
+            if (chavesCliente == null) {
+                System.err.println("Erro ao receber ou localizar chave do cliente: " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
+                return false;
+            }
 
             // 3 - envia chave pública para o cliente
             saida.writeObject(chavesCliente.getPublic());
@@ -55,50 +87,64 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
             // 4 - receber chave AES cifrada
             Object entrada2 = entrada.readObject();
             if (!(entrada2 instanceof byte[])) {
-                System.err.println("Erro ao receber chave AES (byte[])");
-                return;
+                System.err.println("Erro ao receber chave AES");
+                return false;
             }
 
             byte[] bytesChaveAESCifrada = (byte[]) entrada2;
 
             byte[] bytesChaveAESDecifrada = descriptografarRSA(bytesChaveAESCifrada, chavesCliente.getPrivate());
-            SecretKey chaveAES = new SecretKeySpec(bytesChaveAESDecifrada, "AES");
 
-            while(isActive) {
-                try {
-                    Object entrada3 = entrada.readObject();
-
-                    if (entrada3 instanceof byte[]) {
-
-                        byte[] bytesHashMap = descriptografarAES((byte[]) entrada3, chaveAES);
-
-                        // recriando HashMap
-                        ConcurrentHashMap<Integer, List<String>> mapaRecebido = recriarHashMap(bytesHashMap);
-
-                        if (mapaRecebido != null) {
-                            System.out.println("Recebida atualização de " + idCliente + " com " + mapaRecebido.size() + " registros.");
-                            atualizarDadosGlobais(mapaRecebido);
-
-                            dadosGlobais.forEach((id, lista) -> {
-                                System.out.println("Dispositivo: " + id);
-                                System.out.println(lista);
-                            });
-                        }
-
-                    }
-                } catch (EOFException e) {
-                    System.out.println("Conexão encerrada pelo cliente " + idCliente);
-                    break;
-                }
+            if (bytesChaveAESDecifrada == null) {
+                System.err.println("Falha ao decifrar chave AES.");
+                return false;
             }
-        } catch (EOFException e) {
-            System.out.println("Conexão encerrada pelo cliente " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
+
+            this.chaveSecretaCliente = new SecretKeySpec(bytesChaveAESDecifrada, "AES");
+                return true;
+        } catch (ClassNotFoundException e) {
+            System.err.println("Erro ao descriptografar RSA: " + e.getMessage());
         } catch (IOException e) {
-            System.err.println("Erro ao estabelecer conexao com o cliente: " + cliente.getInetAddress() + ":" + cliente.getPort() + " - " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Erro inesperado ao cifrar/enviar a localização: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Erro ao conectar com cliente: " + e.getMessage());
         }
+        return false;
+    }
+
+    private synchronized void processarDados() {
+        while(isActive) {
+            try {
+                Object entrada3 = entrada.readObject();
+
+                if (entrada3 instanceof byte[]) {
+
+                    byte[] bytesHashMap = descriptografarAES((byte[]) entrada3, chaveSecretaCliente);
+
+                    // recriando HashMap
+                    ConcurrentHashMap<Integer, List<String>> mapaRecebido = recriarHashMap(bytesHashMap);
+
+                    if (mapaRecebido != null) {
+                        System.out.println("Recebida atualização de " + idCliente + " com " + mapaRecebido.size() + " registros.");
+                        atualizarDadosGlobais(mapaRecebido);
+
+                        dadosGlobais.forEach((id, lista) -> {
+                            System.out.println("Dispositivo: " + id);
+                            System.out.println(lista);
+                        });
+                    }
+
+                }
+            } catch (EOFException e) {
+                System.out.println("Conexão encerrada pelo cliente " + this.idCliente);
+                break;
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println("Erro durante processamento de dados de " + this.idCliente + ": " + e.getMessage());
+                break;
+            }
+        }
+    }
+
+    private void parar() {
+        this.isActive = false;
     }
 
     private synchronized void atualizarDadosGlobais(ConcurrentHashMap<Integer, List<String>> mapaRecebido) {

@@ -6,10 +6,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.time.LocalDateTime;
@@ -111,7 +108,10 @@ public abstract class ImplMicrodispositivo {
                 Thread.currentThread().interrupt();
             }
         }
-
+        // Fechamento do socket UDP
+        if (socketUDP != null && !socketUDP.isClosed()) {
+            socketUDP.close();
+        }
     }
 
     protected void criptografarLocalizacao() {
@@ -129,16 +129,12 @@ public abstract class ImplMicrodispositivo {
             SecureRandom sr = new SecureRandom();
 
             byte[] bytesChaveSessao = new byte[32];
-
             sr.nextBytes(bytesChaveSessao);
-
             SecretKey chaveSessao = new SecretKeySpec(bytesChaveSessao, "ChaCha20");
 
             // 2) cifra a chave de sessão com RSA/OAEP usando a public key do servidor
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
-
             cipher.init(Cipher.ENCRYPT_MODE, chavePublicaServidor);
-
             byte[] bytesEncriptados = cipher.doFinal(bytesChaveSessao);
 
             // 3) cifra o texto com ChaCha20-Poly1305
@@ -150,44 +146,44 @@ public abstract class ImplMicrodispositivo {
 
             chacha.init(Cipher.ENCRYPT_MODE, chaveSessao, parameterSpec);
 
-            byte[] bytesTextoPlano = localizacao.getBytes();
-            byte[] bytesEncriptadosTextoPlano = chacha.doFinal(bytesTextoPlano);
+            byte[] bytesEncriptadosTextoPlano = chacha.doFinal(localizacao.getBytes());
 
             // DeviceId — assumimos getter no gerador
             String deviceId = geradorDeLeituras.getIdDispositivo();
 
-            // 4) envia deviceId + sessionKeyEncrypted + nonce + payloadEncrypted ao servidor de localização
-            try (Socket socket = new Socket(ip, portaServidorLocalizacao)) {
-                ObjectOutputStream saida = new ObjectOutputStream(socket.getOutputStream());
-                saida.flush(); // envia cabeçalho
-                ObjectInputStream entrada = new ObjectInputStream(socket.getInputStream());
+            // 4) envia id + chave sessao + nonce + payloadEncrypted ao servidor de localização
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream saida = new ObjectOutputStream(baos);
 
-                // Envia na ordem esperada pelo servidor
-                saida.writeObject(deviceId);
-                saida.writeObject(bytesEncriptados);              // sessionKeyEncrypted
-                saida.writeObject(nonce);
-                saida.writeObject(bytesEncriptadosTextoPlano);    // payload
-                saida.flush();
+            // Envia na ordem esperada pelo servidor
+            saida.writeObject(deviceId);
+            saida.writeObject(bytesEncriptados);              // sessionKeyEncrypted
+            saida.writeObject(nonce);
+            saida.writeObject(bytesEncriptadosTextoPlano);    // payload
+            saida.flush();
+            byte[] dadosEnviar = baos.toByteArray();
 
-                System.out.println("Localização (cifrada) enviada com sucesso para " + ip + ":" + portaServidorLocalizacao);
+            InetAddress enderecoServidor = InetAddress.getByName(ip);
+            DatagramPacket pacoteEnvio = new DatagramPacket(dadosEnviar, dadosEnviar.length, enderecoServidor, porta);
+            socketUDP.send(pacoteEnvio);
+            System.out.println("Localização (cifrada) enviada com sucesso para " + ip + ":" + portaServidorLocalizacao);
 
-                //5) recebe resposta do servidor (porta do servidor de borda)
-                Object resposta = null;
-                try {
-                    resposta = entrada.readObject();
 
-                    if (resposta instanceof Integer) {
-                        portaServidorDeBorda =  (Integer) resposta;
-                        System.out.println("Porta de borda recebida: " + portaServidorDeBorda);
-                    } else {
-                        System.err.println("Erro ao receber porta do servidor: resposta inválida");
-                    }
-                } catch (ClassNotFoundException e) {
-                    System.err.println("Erro ao ler resposta do servidor: " + e.getMessage());
-                }
-            } catch (IOException e) {
-                System.err.println("Erro de I/O ao conectar/enviar para o servidor " + ip + ":" + portaServidorLocalizacao + " — verifique se o servidor está rodando e a porta está correta. - " + e.getMessage());
+            //5) recebe resposta do servidor (porta do servidor de borda
+            // 4. Aguarda resposta UDP (Porta do Servidor de Borda)
+            byte[] bufferResp = new byte[4096];
+            DatagramPacket pacoteResposta = new DatagramPacket(bufferResp, bufferResp.length);
+            socketUDP.receive(pacoteResposta);
+
+            ByteArrayInputStream bais = new ByteArrayInputStream(pacoteResposta.getData(), 0, pacoteResposta.getLength());
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            Object resposta = ois.readObject();
+
+            if (resposta instanceof Integer) {
+                portaServidorDeBorda = (Integer) resposta;
+                System.out.println("Porta de borda recebida via UDP: " + portaServidorDeBorda);
             }
+
         } catch (NoSuchAlgorithmException e) {
             System.err.println("Erro: algoritmo criptográfico não disponível no ambiente (provavelmente falta suporte ao algoritmo solicitado). Detalhe: " + e.getMessage());
         } catch (NoSuchPaddingException e) {
@@ -246,6 +242,7 @@ public abstract class ImplMicrodispositivo {
                 System.err.println("Resposta inesperada do servidor na troca de chaves (esperado PublicKey).");
                 return;
             }
+
             PublicKey chavePublicaServidor = (PublicKey) obj;
 
             // 6 - Adiciona a chave publica do servidor e a sua chave privada ao HashMap
