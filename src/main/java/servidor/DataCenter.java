@@ -69,20 +69,12 @@ public class DataCenter extends ImplServidor {
                 Thread aceitadora = new Thread(new DataCenterAceitaServidoresDeBorda(cliente, chavesClientes, dadosGlobais));
                 aceitadora.start();
 
-                calculadoraMaximosGlobais.join();
-                calculadoraMediosGlobais.join();
-                calculadoraMaximoSensor.join();
-                calculadoraMediosSensor.join();
-                aceitadora.join();
-
                 listaThreads.add(aceitadora);
             }
         } catch (IOException e) {
             if (isActive) {
                 System.err.println("Erro ao aceitar conexão: " + e.getMessage());
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
     }
 

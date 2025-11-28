@@ -14,7 +14,6 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -221,7 +220,7 @@ public class ServidorDeBorda extends ImplServidor {
                         7000,
                         "192.168.0.8",
                         "Borda-1",
-                        "localhost",
+                        "192.168.0.8",
                         8000);
 
     }
