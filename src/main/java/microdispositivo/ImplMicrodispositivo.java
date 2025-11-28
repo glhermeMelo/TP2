@@ -54,26 +54,27 @@ public abstract class ImplMicrodispositivo {
 
     //A threadGeradora já para em intervalos por causa do sleep no Runnable
     protected void rodar() {
-        //Busca por servidor de Localizacao, troca as chaves e recebe a porta do servidor de borda
-        trocarChavesRSA(portaServidorLocalizacao, chavesServidorLocalizacao);
-        criptografarLocalizacao();
+        // 1. Handshake com Servidor de Localização (Agora via UDP)
+        realizarHandshakeUDP(this.ip, portaServidorLocalizacao, chavesServidorLocalizacao);
 
-        if (portaServidorDeBorda <= 0) {
-            System.err.println("Porta do servidor de borda inválida!");
+        // 2. Envia localização cifrada e descobre o IP do Servidor de Borda
+        criptografarLocalizacao(); // Certifique-se que este método também foi corrigido conforme instrução anterior
+
+        if (portaServidorDeBorda <= 0 || this.enderecoBorda == null) {
+            System.err.println("Dados do servidor de borda inválidos! Abortando.");
             return;
         }
 
-        //Troca as chaves com o servidor de borda
-        trocarChavesRSA(portaServidorDeBorda, chavesServidorDeBorda);
+        // 3. Handshake com Servidor de Borda (Obrigatório ser UDP)
+        // IMPORTANTE: Use 'this.enderecoBorda' aqui, não 'this.ip'
+        realizarHandshakeUDP(this.enderecoBorda, portaServidorDeBorda, chavesServidorDeBorda);
 
+        // Inicia threads de geração e envio...
         if (threadGeradora == null || !threadGeradora.isAlive()) {
             threadGeradora = new Thread(geradorDeLeituras);
             threadGeradora.start();
-        } else {
-            System.out.println("Thread geradora rodando");
         }
 
-        //Nova Thread Deamon para ler os valores gerados pelo Gerador e criptografar
         Thread monitora = geraThreadMonitora();
         monitora.start();
     }
@@ -164,13 +165,18 @@ public abstract class ImplMicrodispositivo {
             saida.flush();
             byte[] dadosEnviar = baos.toByteArray();
 
-            InetAddress enderecoServidor = InetAddress.getByName(ip);
-            DatagramPacket pacoteEnvio = new DatagramPacket(dadosEnviar, dadosEnviar.length, enderecoServidor, porta);
+            // --- CORREÇÃO AQUI ---
+            // Usamos 'this.ip' (que é o IP do servidor de localização configurado no construtor)
+            // e não 'this.enderecoBorda' (que ainda é null neste momento).
+            InetAddress enderecoServidor = InetAddress.getByName(this.ip);
+
+            // A porta deve ser a portaServidorLocalizacao (ex: 6000)
+            DatagramPacket pacoteEnvio = new DatagramPacket(dadosEnviar, dadosEnviar.length, enderecoServidor, portaServidorLocalizacao);
             socketUDP.send(pacoteEnvio);
             System.out.println("Localização (cifrada) enviada com sucesso para " + ip + ":" + portaServidorLocalizacao);
 
 
-            //5) recebe resposta do servidor (porta do servidor de borda
+            // 5) recebe resposta do servidor (porta do servidor de borda)
             try {
                 socketUDP.setSoTimeout(5000);
 
@@ -200,76 +206,78 @@ public abstract class ImplMicrodispositivo {
                 System.err.println("Verifique se o ServidorLocalizacao está rodando e se não houve erro no console dele.");
             }
         } catch (NoSuchAlgorithmException e) {
-            System.err.println("Erro: algoritmo criptográfico não disponível no ambiente (provavelmente falta suporte ao algoritmo solicitado). Detalhe: " + e.getMessage());
+            System.err.println("Erro: algoritmo criptográfico não disponível: " + e.getMessage());
         } catch (NoSuchPaddingException e) {
-            System.err.println("Erro: esquema de padding não disponível (verifique o nome do algoritmo de Cipher). Detalhe: " + e.getMessage());
+            System.err.println("Erro: esquema de padding não disponível: " + e.getMessage());
         } catch (InvalidKeyException e) {
-            System.err.println("Erro: chave inválida ao inicializar o cifrador — verifique se a chave pública do servidor está correta e corresponde à chave privada do servidor.");
+            System.err.println("Erro: chave inválida ao inicializar o cifrador: " + e.getMessage());
         } catch (IllegalBlockSizeException e) {
-            System.err.println("Erro: tamanho de bloco ilegal ao cifrar dados com RSA — possivelmente os dados (chave de sessão) são maiores que o permitido pela chave RSA.");
+            System.err.println("Erro: tamanho de bloco ilegal (RSA): " + e.getMessage());
         } catch (BadPaddingException e) {
-            System.err.println("Erro de padding durante a cifragem — possível incompatibilidade de padding entre cliente e servidor (ex.: OAEP vs PKCS1).");
+            System.err.println("Erro de padding: " + e.getMessage());
         } catch (InvalidAlgorithmParameterException e) {
-            System.err.println("Erro: parâmetros inválidos ao inicializar ChaCha20-Poly1305 (nonce/parâmetros). Verifique o tamanho do nonce (deve ser 12 bytes).");
+            System.err.println("Erro: parâmetros inválidos (ChaCha20): " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Erro inesperado ao cifrar/enviar a localização: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    protected void trocarChavesRSA(int portaServidor, ConcurrentHashMap<Integer, KeyPair> chavesServidor) {
-        // 1 - Gerando chaves para o servidor se não existirem
-        if (!chavesServidor.containsKey(portaServidor)) {
-            Security.addProvider(new BouncyCastleProvider());
-
-            try {
+    protected void realizarHandshakeUDP(String ipDestino, int portaServidor, ConcurrentHashMap<Integer, KeyPair> chavesServidor) {
+        try {
+            // 1 - Gerando chaves locais se não existirem
+            if (!chavesServidor.containsKey(portaServidor)) {
+                Security.addProvider(new BouncyCastleProvider());
                 KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
                 SecureRandom sr = new SecureRandom();
                 kpg.initialize(2048, sr);
-                KeyPair kp = kpg.generateKeyPair();
-                chavesServidor.put(portaServidor, kp);
-            } catch (NoSuchAlgorithmException e) {
-                System.err.println("Erro ao gerar chaves RSA! " + e.getMessage());
-            }
-        }
-
-        // 2 - Pega chave publica e a chave privada (do par local)
-        PublicKey chavePublicaLocal = chavesServidor.get(portaServidor).getPublic();
-        PrivateKey chavePrivadaLocal = chavesServidor.get(portaServidor).getPrivate();
-
-        // DeviceId — assumimos getter no gerador
-        String deviceId = geradorDeLeituras.getIdDispositivo();
-
-        // 3 - Estabelece conexao (criar output primeiro para evitar deadlock)
-        try (Socket socket = new Socket(ip, portaServidor)) {
-            ObjectOutputStream saida  = new ObjectOutputStream(socket.getOutputStream());
-            saida.flush(); // envia cabeçalho imediatamente
-            ObjectInputStream entrada = new ObjectInputStream(socket.getInputStream());
-
-            // 4 - Envia deviceId e a chave publica do cliente para o servidor
-            saida.writeObject(deviceId);
-            saida.writeObject(chavePublicaLocal);
-            saida.flush();
-
-            // 5 - Recebe chave publica do servidor
-            Object obj = entrada.readObject();
-            if (!(obj instanceof PublicKey)) {
-                System.err.println("Resposta inesperada do servidor na troca de chaves (esperado PublicKey).");
-                return;
+                chavesServidor.put(portaServidor, kpg.generateKeyPair());
             }
 
-            PublicKey chavePublicaServidor = (PublicKey) obj;
+            KeyPair kpLocal = chavesServidor.get(portaServidor);
+            String deviceId = geradorDeLeituras.getIdDispositivo();
 
-            // 6 - Adiciona a chave publica do servidor e a sua chave privada ao HashMap
-            KeyPair kp = new KeyPair(chavePublicaServidor, chavePrivadaLocal);
-            chavesServidor.put(portaServidor, kp);
+            // 2 - Prepara o pacote de Handshake (ID + Chave Pública Local)
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(deviceId);            // 1º Objeto: ID (String)
+            oos.writeObject(kpLocal.getPublic()); // 2º Objeto: Chave Pública (PublicKey)
+            oos.flush();
+            byte[] dados = baos.toByteArray();
 
-            System.out.println("Troca de chaves RSA concluída com o servidor na porta " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
-        }  catch (ClassNotFoundException e) {
-            System.err.println("Erro ao receber chave do servidor! " + e.getMessage());
+            // 3 - Envia via UDP (Socket já existente)
+            InetAddress endereco = InetAddress.getByName(ipDestino);
+            DatagramPacket pacoteEnvio = new DatagramPacket(dados, dados.length, endereco, portaServidor);
+            this.socketUDP.send(pacoteEnvio);
+
+            // 4 - Aguarda resposta (Chave Pública do Servidor)
+            this.socketUDP.setSoTimeout(5000); // Timeout de 5s
+            byte[] buffer = new byte[4096];
+            DatagramPacket pacoteResp = new DatagramPacket(buffer, buffer.length);
+            this.socketUDP.receive(pacoteResp);
+
+            // 5 - Processa a resposta
+            ByteArrayInputStream bais = new ByteArrayInputStream(pacoteResp.getData(), 0, pacoteResp.getLength());
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            Object obj = ois.readObject();
+
+            if (obj instanceof PublicKey) {
+                PublicKey pkServidor = (PublicKey) obj;
+
+                // Salva o par de chaves (Privada Local + Pública do Servidor)
+                KeyPair kpCompleto = new KeyPair(pkServidor, kpLocal.getPrivate());
+                chavesServidor.put(portaServidor, kpCompleto);
+
+                System.out.println("Handshake UDP concluído com " + ipDestino + ":" + portaServidor);
+            } else {
+                System.err.println("Resposta inválida do servidor " + ipDestino + " durante handshake.");
+            }
+
+        } catch (SocketTimeoutException e) {
+            System.err.println("Timeout: O servidor " + ipDestino + ":" + portaServidor + " não respondeu ao handshake.");
+        } catch (Exception e) {
+            System.err.println("Erro no handshake UDP com " + ipDestino + ": " + e.getMessage());
             e.printStackTrace();
-        } catch (IOException e) {
-            System.err.println("Erro ao estabelecer conexao com servidor " + portaServidor + "! " + e.getMessage());
         }
     }
 
@@ -287,22 +295,22 @@ public abstract class ImplMicrodispositivo {
         try {
             SecureRandom sr = new SecureRandom();
 
-            //Gerar chave da sessao
+            // Gerar chave da sessao
             byte[] bytesChaveSessao = new byte[32];
             sr.nextBytes(bytesChaveSessao);
             SecretKey chaveSessao = new SecretKeySpec(bytesChaveSessao, "ChaCha20");
 
-            //Gerar nonce
+            // Gerar nonce
             byte[] nonce = new byte[12];
             sr.nextBytes(nonce);
             IvParameterSpec ivParameterSpec = new IvParameterSpec(nonce);
 
-            //Cifrar mensagem
+            // Cifrar mensagem
             Cipher chacha = Cipher.getInstance("ChaCha20-Poly1305");
             chacha.init(Cipher.ENCRYPT_MODE, chaveSessao, ivParameterSpec);
             byte[] bytesMensagemEncriptada = chacha.doFinal(textoPlano.getBytes());
 
-            //Cifrar a chave da sessao
+            // Cifrar a chave da sessao
             Cipher rsa = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
             rsa.init(Cipher.ENCRYPT_MODE, chavePublicaBorda);
             byte[] bytesChaveSessaoEncriptada = rsa.doFinal(bytesChaveSessao);
@@ -318,28 +326,39 @@ public abstract class ImplMicrodispositivo {
 
             byte[] mensagem = baos.toByteArray();
 
-            InetAddress enderecoBorda = InetAddress.getByName(ip);
-            DatagramPacket pacote = new DatagramPacket(mensagem, mensagem.length, enderecoBorda, portaServidorDeBorda);
+            // --- CORREÇÃO AQUI ---
+            // Alterado de 'InetAddress.getByName(ip)' para 'InetAddress.getByName(this.enderecoBorda)'
+            // para garantir que enviamos para o Servidor de Borda descoberto, e não para o Servidor de Localização.
+            if (this.enderecoBorda == null) {
+                System.err.println("Erro: Endereço do servidor de borda não foi definido.");
+                return;
+            }
+
+            InetAddress enderecoDestino = InetAddress.getByName(this.enderecoBorda);
+
+            DatagramPacket pacote = new DatagramPacket(mensagem, mensagem.length, enderecoDestino, portaServidorDeBorda);
+
             System.out.println("Dispositivo: " + idDispositivo + ", enviando leitura ao servidor de borda: "
-                    + enderecoBorda.getHostAddress() + ":" + portaServidorDeBorda);
+                    + enderecoDestino.getHostAddress() + ":" + portaServidorDeBorda);
+
             socketUDP.send(pacote);
 
         } catch (IOException e) {
             System.err.println("Erro ao enviar leitura ao servidor de borda: " + portaServidorDeBorda + " - " + e.getMessage());
         } catch (NoSuchAlgorithmException e) {
-            System.err.println("Erro: algoritmo criptográfico não disponível no ambiente (provavelmente falta suporte ao algoritmo solicitado). Detalhe: " + e.getMessage());
+            System.err.println("Erro: algoritmo criptográfico não disponível: " + e.getMessage());
         } catch (NoSuchPaddingException e) {
-            System.err.println("Erro: esquema de padding não disponível (verifique o nome do algoritmo de Cipher). Detalhe: " + e.getMessage());
+            System.err.println("Erro: esquema de padding não disponível: " + e.getMessage());
         } catch (InvalidKeyException e) {
-            System.err.println("Erro: chave inválida ao inicializar o cifrador — verifique se a chave pública do servidor está correta e corresponde à chave privada do servidor.");
+            System.err.println("Erro: chave inválida ao inicializar o cifrador: " + e.getMessage());
         } catch (IllegalBlockSizeException e) {
-            System.err.println("Erro: tamanho de bloco ilegal ao cifrar dados com RSA — possivelmente os dados (chave de sessão) são maiores que o permitido pela chave RSA.");
+            System.err.println("Erro: tamanho de bloco ilegal (RSA): " + e.getMessage());
         } catch (BadPaddingException e) {
-            System.err.println("Erro de padding durante a cifragem — possível incompatibilidade de padding entre cliente e servidor (ex.: OAEP vs PKCS1).");
+            System.err.println("Erro de padding: " + e.getMessage());
         } catch (InvalidAlgorithmParameterException e) {
-            System.err.println("Erro: parâmetros inválidos ao inicializar ChaCha20-Poly1305 (nonce/parâmetros). Verifique o tamanho do nonce (deve ser 12 bytes).");
+            System.err.println("Erro: parâmetros inválidos (ChaCha20): " + e.getMessage());
         } catch (Exception e) {
-            System.err.println("Erro inesperado ao cifrar/enviar a localização: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            System.err.println("Erro inesperado ao cifrar/enviar a leitura: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             e.printStackTrace();
         }
     }

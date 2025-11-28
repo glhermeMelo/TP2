@@ -141,7 +141,7 @@ public abstract class ClienteRMI {
 
     public static void main(String[] args) {
         try {
-            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+            Registry registry = LocateRegistry.getRegistry("192.168.0.8", 1099);
 
             IMonitoramentoRMI stub = (IMonitoramentoRMI) registry.lookup("MonitoramentoClimatico");
 

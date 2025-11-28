@@ -1,5 +1,7 @@
 package entities;
 
+import java.io.Serializable;
+
 public record RegistroClimatico(
         String localizacao,
         String idDispositivo,
@@ -13,7 +15,7 @@ public record RegistroClimatico(
         String umidade,
         String temperatura,
         String ruido,
-        String radiacaoUV) {
+        String radiacaoUV) implements Serializable {
 
     @Override
     public String localizacao() {
