@@ -1,4 +1,4 @@
-package servidor.threads;
+package servidorRMI.threads;
 
 import entities.RegistroClimatico;
 
@@ -63,6 +63,7 @@ public class CalculaValoresMedios implements Runnable {
     public void parar() {
         isActive = false;
     }
+
     public synchronized Double getTemperaturaMedia() {
         return medias.getOrDefault("temperatura", 0.0);
     }

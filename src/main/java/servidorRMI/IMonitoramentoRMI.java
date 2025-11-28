@@ -28,4 +28,25 @@ public interface IMonitoramentoRMI extends Remote {
     Double getRuidoMedio() throws RemoteException;
     Double getRadiacaoUVMedia() throws RemoteException;
 
+    Double getTemperaturaMediaPorSensor(int idSensor) throws RemoteException;
+    Double getCO2MedioPorSensor(int idSensor) throws RemoteException;
+    Double getCOMedioPorSensor(int idSensor) throws RemoteException;
+    Double getNO2MedioPorSensor(int idSensor) throws RemoteException;
+    Double getSO2MedioPorSensor(int idSensor) throws RemoteException;
+    Double getPM2_5MedioPorSensor(int idSensor)  throws RemoteException;
+    Double getPM10MedioPorSensor(int idSensor) throws RemoteException;
+    Double getUmidadeMediaPorSensor(int idSensor) throws RemoteException;
+    Double getRuidoMedioPorSensor(int idSensor) throws RemoteException;
+    Double getRadiacaoUVMediaPorSensor(int idSensor) throws RemoteException;
+
+    RegistroClimatico getTemperaturaMaximaPorSensor(int idSensor) throws RemoteException;
+    RegistroClimatico getCO2MaximoPorSensor(int idSensor) throws RemoteException;
+    RegistroClimatico getCOMaximoPorSensor(int idSensor) throws RemoteException;
+    RegistroClimatico getNO2MaximoPorSensor(int idSensor) throws RemoteException;
+    RegistroClimatico getSO2MaximoPorSensor(int idSensor) throws RemoteException;
+    RegistroClimatico getPM2_5MaximoPorSensor(int idSensor)  throws RemoteException;
+    RegistroClimatico getPM10MaximoPorSensor(int idSensor) throws RemoteException;
+    RegistroClimatico getUmidadeMaximaPorSensor(int idSensor) throws RemoteException;
+    RegistroClimatico getRuidoMaximoPorSensor(int idSensor) throws RemoteException;
+    RegistroClimatico getRadiacaoUVMaximaPorSensor(int idSensor) throws RemoteException;
 }

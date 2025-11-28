@@ -1,4 +1,4 @@
-package servidor.threads;
+package servidorRMI.threads;
 
 import entities.RegistroClimatico;
 

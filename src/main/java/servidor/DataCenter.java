@@ -1,7 +1,7 @@
 package servidor;
 
-import servidor.threads.CalculaValorMaximo;
-import servidor.threads.CalculaValoresMedios;
+import servidorRMI.threads.CalculaValorMaximo;
+import servidorRMI.threads.CalculaValoresMedios;
 import entities.RegistroClimatico;
 import servidor.threads.DataCenterAceitaServidoresDeBorda;
 import servidorRMI.IMonitoramentoRMI;

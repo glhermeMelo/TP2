@@ -65,6 +65,8 @@ public abstract class ClienteRMI {
             System.out.println("1. Consultar valores máximos");
             System.out.println("2. Consultar valores médios");
             System.out.println("3. Relatório Completo (Todos os dados)");
+            System.out.println("4. Consultar valores médios por localização");
+            System.out.println("5. Consultar valores máximos por localização");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
 
@@ -84,6 +86,7 @@ public abstract class ClienteRMI {
     }
 
     private static void exibirOpcoes(int opcao, IMonitoramentoRMI stub) {
+        Scanner sc = new Scanner(System.in);
         try {
             switch (opcao) {
                 case 1: exibirMaximos(stub); break;
@@ -92,6 +95,24 @@ public abstract class ClienteRMI {
                     exibirMaximos(stub);
                     exibirMedias(stub);
                 } break;
+                case 4:
+                    System.out.print("Digite o ID do sensor (numérico): ");
+                    try {
+                        int idSensor = Integer.parseInt(sc.nextLine());
+                        exibirMediasPorSensor(stub, idSensor);
+                    } catch (NumberFormatException e) {
+                        System.out.println("ID inválido. Deve ser um número inteiro.");
+                    }
+                    break;
+                case 5:
+                    System.out.print("Digite o ID do sensor (numérico): ");
+                    try {
+                        int idSensor = Integer.parseInt(sc.nextLine());
+                        exibirMaximosPorSensor(stub, idSensor);
+                    } catch (NumberFormatException e) {
+                        System.out.println("ID inválido. Deve ser um número inteiro.");
+                    }
+                    break;
 
                 default:
                     System.out.println("Opção desconhecida.");
@@ -101,6 +122,36 @@ public abstract class ClienteRMI {
         }
     }
 
+    private static void exibirMediasPorSensor(IMonitoramentoRMI stub, int id) throws RemoteException {
+        System.out.println("\n--- MÉDIAS DO SENSOR " + id + " ---");
+
+        System.out.printf("Temperatura: %.2f °C%n", stub.getTemperaturaMediaPorSensor(id));
+        System.out.printf("Umidade:     %.2f %%%n", stub.getUmidadeMediaPorSensor(id));
+        System.out.printf("CO2:         %.2f ppm%n", stub.getCO2MedioPorSensor(id));
+        System.out.printf("CO:          %.2f ppm%n", stub.getCOMedioPorSensor(id));
+        System.out.printf("NO2:         %.2f µg/m³%n", stub.getNO2MedioPorSensor(id));
+        System.out.printf("SO2:         %.2f µg/m³%n", stub.getSO2MedioPorSensor(id));
+        System.out.printf("PM2.5:       %.2f µg/m³%n", stub.getPM2_5MedioPorSensor(id));
+        System.out.printf("PM10:        %.2f µg/m³%n", stub.getPM10MedioPorSensor(id));
+        System.out.printf("Ruído:       %.2f dB%n", stub.getRuidoMedioPorSensor(id));
+        System.out.println("Radiação UV: " + stub.getRadiacaoUVMediaPorSensor(id));
+        System.out.println("--------------------------------");
+    }
+
+    private static void exibirMaximosPorSensor(IMonitoramentoRMI stub, int id) throws RemoteException {
+        System.out.println("\n--- MÁXIMOS DO SENSOR " + id + " ---");
+        System.out.printf("Temperatura: %.2f °C%n", stub.getTemperaturaMaximaPorSensor(id));
+        System.out.printf("Umidade:     %.2f %%%n", stub.getUmidadeMaximaPorSensor(id));
+        System.out.printf("CO2:         %.2f ppm%n", stub.getCO2MaximoPorSensor(id));
+        System.out.printf("CO:          %.2f ppm%n", stub.getCOMaximoPorSensor(id));
+        System.out.printf("NO2:         %.2f µg/m³%n", stub.getNO2MaximoPorSensor(id));
+        System.out.printf("SO2:         %.2f µg/m³%n", stub.getSO2MaximoPorSensor(id));
+        System.out.printf("PM2.5:       %.2f µg/m³%n", stub.getPM2_5MaximoPorSensor(id));
+        System.out.printf("PM10:        %.2f µg/m³%n", stub.getPM10MaximoPorSensor(id));
+        System.out.printf("Ruído:       %.2f dB%n", stub.getRuidoMaximoPorSensor(id));
+        System.out.println("Radiação UV: " + stub.getRadiacaoUVMaximaPorSensor(id));
+        System.out.println("--------------------------------");
+    }
     private static void exibirMaximos(IMonitoramentoRMI stub) throws RemoteException {
         try {
             System.out.println("\n--- VALORES MÁXIMOS REGISTRADOS ---");
