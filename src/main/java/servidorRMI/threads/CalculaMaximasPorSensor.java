@@ -40,7 +40,6 @@ public class CalculaMaximasPorSensor implements Runnable {
                     }
                 });
 
-                System.out.println("Máximas por sensor atualizadas em: " + LocalDateTime.now());
                 Thread.sleep(intervaloMilis);
 
             } catch (InterruptedException e) {

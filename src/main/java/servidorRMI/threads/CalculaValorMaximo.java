@@ -35,7 +35,6 @@ public class CalculaValorMaximo implements Runnable {
                 atualizarMaximo("pm10", r -> Double.parseDouble(r.pM10()));
                 atualizarMaximo("ruido", r -> Double.parseDouble(r.ruido()));
                 atualizarMaximo("radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
-                System.out.println("Atualizando temperaturas maximas: " + LocalDateTime.now());
 
             } catch (Exception e) {
                 System.err.println("Erro ao calcular maximos: " + e.getMessage());

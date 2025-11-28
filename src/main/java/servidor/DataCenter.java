@@ -91,14 +91,14 @@ public class DataCenter extends ImplServidor {
             ImplMonitoramentoClimatico refObjRemoto = new ImplMonitoramentoClimatico(threadMedios,
                     threadMaximos, threadMediasPorSensor, threadMaximasPorSensor);
 
-            IMonitoramentoRMI skeleton = (IMonitoramentoRMI) UnicastRemoteObject
+            IMonitoramentoRMI stub = (IMonitoramentoRMI) UnicastRemoteObject
                     .exportObject(refObjRemoto, 0);
 
             LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
 
             Registry monitoramentoClimatico = LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
 
-            monitoramentoClimatico.rebind("MonitoramentoClimatico", skeleton);
+            monitoramentoClimatico.rebind("MonitoramentoClimatico", stub);
 
             System.err.println("MonitoramentoClimatico inicializado com sucesso!");
         } catch (AccessException e) {

@@ -40,7 +40,6 @@ public class CalculaMediasPorSensor implements Runnable {
                     }
                 });
 
-                System.out.println("Médias por sensor atualizadas em: " + LocalDateTime.now());
                 Thread.sleep(intervaloMilis);
 
             } catch (InterruptedException e) {

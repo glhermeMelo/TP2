@@ -34,7 +34,6 @@ public class CalculaValoresMedios implements Runnable {
                 calculaMedia("pm10", r -> Double.parseDouble(r.pM10()));
                 calculaMedia("ruido", r -> Double.parseDouble(r.ruido()));
                 calculaMedia("radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
-                System.out.println("Atualizando temperaturas medias: " + LocalDateTime.now());
 
             } catch (Exception e) {
                 System.err.println("Erro ao calcular medias: " + e.getMessage());

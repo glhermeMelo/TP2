@@ -1,5 +1,6 @@
 package cliente;
 
+import entities.RegistroClimatico;
 import servidorRMI.IMonitoramentoRMI;
 
 import javax.crypto.Cipher;
@@ -104,16 +105,6 @@ public abstract class ClienteRMI {
                         System.out.println("ID inválido. Deve ser um número inteiro.");
                     }
                     break;
-                case 5:
-                    System.out.print("Digite o ID do sensor (numérico): ");
-                    try {
-                        int idSensor = Integer.parseInt(sc.nextLine());
-                        exibirMaximosPorSensor(stub, idSensor);
-                    } catch (NumberFormatException e) {
-                        System.out.println("ID inválido. Deve ser um número inteiro.");
-                    }
-                    break;
-
                 default:
                     System.out.println("Opção desconhecida.");
             }
@@ -138,20 +129,6 @@ public abstract class ClienteRMI {
         System.out.println("--------------------------------");
     }
 
-    private static void exibirMaximosPorSensor(IMonitoramentoRMI stub, int id) throws RemoteException {
-        System.out.println("\n--- MÁXIMOS DO SENSOR " + id + " ---");
-        System.out.printf("Temperatura: %.2f °C%n", stub.getTemperaturaMaximaPorSensor(id));
-        System.out.printf("Umidade:     %.2f %%%n", stub.getUmidadeMaximaPorSensor(id));
-        System.out.printf("CO2:         %.2f ppm%n", stub.getCO2MaximoPorSensor(id));
-        System.out.printf("CO:          %.2f ppm%n", stub.getCOMaximoPorSensor(id));
-        System.out.printf("NO2:         %.2f µg/m³%n", stub.getNO2MaximoPorSensor(id));
-        System.out.printf("SO2:         %.2f µg/m³%n", stub.getSO2MaximoPorSensor(id));
-        System.out.printf("PM2.5:       %.2f µg/m³%n", stub.getPM2_5MaximoPorSensor(id));
-        System.out.printf("PM10:        %.2f µg/m³%n", stub.getPM10MaximoPorSensor(id));
-        System.out.printf("Ruído:       %.2f dB%n", stub.getRuidoMaximoPorSensor(id));
-        System.out.println("Radiação UV: " + stub.getRadiacaoUVMaximaPorSensor(id));
-        System.out.println("--------------------------------");
-    }
     private static void exibirMaximos(IMonitoramentoRMI stub) throws RemoteException {
         try {
             System.out.println("\n--- VALORES MÁXIMOS REGISTRADOS ---");
