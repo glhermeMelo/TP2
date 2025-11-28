@@ -124,12 +124,7 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
 
                     if (mapaRecebido != null) {
                         System.out.println("Recebida atualização de " + idCliente + " com " + mapaRecebido.size() + " registros.");
-                        atualizarDadosGlobais(mapaRecebido);
-
-                        dadosGlobais.forEach((id, lista) -> {
-                            System.out.println("Dispositivo: " + id);
-                            System.out.println(lista);
-                        });
+                        atualizarDadosGlobais(mapaRecebido);''
                     }
 
                 }
