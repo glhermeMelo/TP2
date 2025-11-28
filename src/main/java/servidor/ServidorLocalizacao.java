@@ -162,6 +162,6 @@ public class ServidorLocalizacao extends ImplServidor {
         ConcurrentHashMap<String, String> servicosRMI = new ConcurrentHashMap<>();
         servicosRMI.put("MonitoramentoClimatico", "localhost:1099");
 
-        new ServidorLocalizacao(6000, "localhost", "ServidorLocalizacao", localizacaoServidoresDeBorda, servicosRMI);
+        new ServidorLocalizacao(6000, "192.168.0.8", "ServidorLocalizacao", localizacaoServidoresDeBorda, servicosRMI);
     }
 }

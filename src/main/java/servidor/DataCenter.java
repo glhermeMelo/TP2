@@ -111,7 +111,7 @@ public class DataCenter extends ImplServidor {
     public static void main(String[] args) {
         DataCenter dataCenter = new DataCenter(
                 8000,
-                "localhost",
+                "192.168.0.8",
                 "DT-1");
     }
 }

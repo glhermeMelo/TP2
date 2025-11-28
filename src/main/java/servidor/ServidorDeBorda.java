@@ -218,7 +218,7 @@ public class ServidorDeBorda extends ImplServidor {
         ServidorDeBorda servidorDeBorda =
                 new ServidorDeBorda(
                         7000,
-                        "localhost",
+                        "192.168.0.8",
                         "Borda-1",
                         "localhost",
                         8000);
