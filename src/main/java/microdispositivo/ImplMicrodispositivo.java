@@ -24,6 +24,7 @@ public abstract class ImplMicrodispositivo {
 
     private final int portaServidorLocalizacao;
     private int portaServidorDeBorda;
+    private String enderecoBorda;
 
     //HashMap para armazenar a porta dos servidores de localizacao e as chaves
     protected ConcurrentHashMap<Integer, KeyPair> chavesServidorLocalizacao;
@@ -170,20 +171,34 @@ public abstract class ImplMicrodispositivo {
 
 
             //5) recebe resposta do servidor (porta do servidor de borda
-            // 4. Aguarda resposta UDP (Porta do Servidor de Borda)
-            byte[] bufferResp = new byte[4096];
-            DatagramPacket pacoteResposta = new DatagramPacket(bufferResp, bufferResp.length);
-            socketUDP.receive(pacoteResposta);
+            try {
+                socketUDP.setSoTimeout(5000);
 
-            ByteArrayInputStream bais = new ByteArrayInputStream(pacoteResposta.getData(), 0, pacoteResposta.getLength());
-            ObjectInputStream ois = new ObjectInputStream(bais);
-            Object resposta = ois.readObject();
+                byte[] bufferResp = new byte[4096];
+                DatagramPacket pacoteResposta = new DatagramPacket(bufferResp, bufferResp.length);
+                socketUDP.receive(pacoteResposta);
 
-            if (resposta instanceof Integer) {
-                portaServidorDeBorda = (Integer) resposta;
-                System.out.println("Porta de borda recebida via UDP: " + portaServidorDeBorda);
+                ByteArrayInputStream bais = new ByteArrayInputStream(pacoteResposta.getData(), 0, pacoteResposta.getLength());
+                ObjectInputStream ois = new ObjectInputStream(bais);
+                Object resposta = ois.readObject();
+
+                if (resposta instanceof String) {
+                    String endereco = (String) resposta;
+                    if (endereco.startsWith("ERRO")) {
+                        System.err.println("Servidor retornou erro: " + endereco);
+                        return;
+                    }
+                    String[] partes = endereco.split(":");
+                    if (partes.length == 2) {
+                        this.enderecoBorda = partes[0];
+                        this.portaServidorDeBorda = Integer.parseInt(partes[1]);
+                        System.out.println("Redirecionado para Servidor de Borda em: " + enderecoBorda + ":" + portaServidorDeBorda);
+                    }
+                }
+            } catch (SocketTimeoutException e) {
+                System.err.println("ERRO: O servidor não respondeu a tempo (Timeout).");
+                System.err.println("Verifique se o ServidorLocalizacao está rodando e se não houve erro no console dele.");
             }
-
         } catch (NoSuchAlgorithmException e) {
             System.err.println("Erro: algoritmo criptográfico não disponível no ambiente (provavelmente falta suporte ao algoritmo solicitado). Detalhe: " + e.getMessage());
         } catch (NoSuchPaddingException e) {

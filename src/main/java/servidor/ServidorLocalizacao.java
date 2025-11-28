@@ -10,11 +10,11 @@ import java.security.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServidorLocalizacao extends ImplServidor {
-    protected ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda;
+    protected ConcurrentHashMap<String, String> localizacaoServidoresDeBorda;
     protected ConcurrentHashMap<String, String> servicosRMI;
 
     public ServidorLocalizacao(int porta, String ip, String nome,
-                               ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda,
+                               ConcurrentHashMap<String, String> localizacaoServidoresDeBorda,
                                ConcurrentHashMap<String, String> servicosRMI) {
         super(porta, ip, nome);
         this.localizacaoServidoresDeBorda = localizacaoServidoresDeBorda;
@@ -26,10 +26,10 @@ public class ServidorLocalizacao extends ImplServidor {
     protected void rodar() {
         System.out.println(nome + " iniciado em " + ip + ":" + porta);
 
-        // 1. Thread para Clientes TCP (Mantém compatibilidade com ClienteRMI)
+        // 1. Thread para Clientes TCP (Handshake e RMI)
         new Thread(this::ouvirTCP).start();
 
-        // 2. Thread para Microdispositivos UDP (Nova implementação)
+        // 2. Thread para Microdispositivos UDP (Envio de Localização)
         new Thread(this::ouvirUDP).start();
     }
 
@@ -38,7 +38,6 @@ public class ServidorLocalizacao extends ImplServidor {
             System.out.println(nome + " escutando TCP (Clientes) na porta " + porta);
             while (isActive) {
                 Socket cliente = serverSocket.accept();
-
                 ServidorDeLocalizacaoAceitaClientes aceitaCliente =
                         new ServidorDeLocalizacaoAceitaClientes(
                                 cliente,
@@ -61,6 +60,7 @@ public class ServidorLocalizacao extends ImplServidor {
                 DatagramPacket pacote = new DatagramPacket(buffer, buffer.length);
                 socketUDP.receive(pacote);
 
+                // Processa cada pacote em uma nova thread para não bloquear o loop
                 new Thread(() -> processarPacoteUDP(socketUDP, pacote)).start();
             }
         } catch (IOException e) {
@@ -79,7 +79,7 @@ public class ServidorLocalizacao extends ImplServidor {
 
             Object entrada2 = ois.readObject();
 
-            // CASO 1: Handshake (Troca de Chaves)
+            // CASO 1: Handshake (Troca de Chaves) - Geralmente feito via TCP, mas suportado aqui se necessário
             if (entrada2 instanceof PublicKey) {
                 System.out.println("UDP: Handshake solicitado por " + idDispositivo);
                 KeyPair chaves = chavesClientes.computeIfAbsent(idDispositivo, k -> gerarParDeChavesRSA());
@@ -89,22 +89,32 @@ public class ServidorLocalizacao extends ImplServidor {
             else if (entrada2 instanceof byte[]) {
                 System.out.println("UDP: Localização recebida de " + idDispositivo);
                 byte[] sessaoEnc = (byte[]) entrada2;
+
+                // Leitura segura dos próximos objetos
                 byte[] nonce = (byte[]) ois.readObject();
                 byte[] payloadEnc = (byte[]) ois.readObject();
 
-                Integer portaBorda = decifrarEObterPorta(idDispositivo, sessaoEnc, nonce, payloadEnc);
-                responderUDP(socket, pacote, portaBorda);
+                // Decifra e obtém o endereço IP:Porta como String
+                String enderecoBorda = decifrarEObterEndereco(idDispositivo, sessaoEnc, nonce, payloadEnc);
+
+                // Envia a resposta (String) de volta para o microdispositivo
+                responderUDP(socket, pacote, enderecoBorda);
             }
 
         } catch (Exception e) {
-            System.err.println("Erro processando UDP: " + e.getMessage());
+            System.err.println("Erro processando UDP de " + pacote.getAddress() + ": " + e.getMessage());
+            // Em caso de erro grave na leitura, tentamos enviar um erro genérico para destravar o cliente
+            responderUDP(socket, pacote, "ERRO: Falha no processamento do pacote");
         }
     }
 
-    private Integer decifrarEObterPorta(String id, byte[] sessaoEnc, byte[] nonce, byte[] payloadEnc) {
+    private String decifrarEObterEndereco(String id, byte[] sessaoEnc, byte[] nonce, byte[] payloadEnc) {
         try {
             KeyPair kp = chavesClientes.get(id);
-            if (kp == null) return -1;
+            if (kp == null) {
+                System.err.println("Chave não encontrada para " + id);
+                return "ERRO: Chave não encontrada (Faça Handshake)";
+            }
 
             // 1. Decifra chave de sessão (RSA)
             Cipher rsa = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
@@ -116,10 +126,19 @@ public class ServidorLocalizacao extends ImplServidor {
             chacha.init(Cipher.DECRYPT_MODE, new SecretKeySpec(chaveSessao, "ChaCha20"), new IvParameterSpec(nonce));
             String localizacao = new String(chacha.doFinal(payloadEnc));
 
-            return localizacaoServidoresDeBorda.getOrDefault(localizacao, -1);
+            // Busca no mapa
+            String endereco = localizacaoServidoresDeBorda.get(localizacao);
+            if (endereco == null) {
+                System.err.println("Localização '" + localizacao + "' não cadastrada.");
+                return "ERRO: Localização desconhecida";
+            }
+
+            System.out.println("Localização '" + localizacao + "' mapeada para " + endereco);
+            return endereco; // Retorna "IP:Porta"
+
         } catch (Exception e) {
             System.err.println("Erro criptografia: " + e.getMessage());
-            return -1;
+            return "ERRO: Falha na descriptografia";
         }
     }
 
@@ -138,13 +157,12 @@ public class ServidorLocalizacao extends ImplServidor {
         }
     }
 
-    // Método main para teste (pode manter o original)
     public static void main(String[] args) {
-        ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda = new ConcurrentHashMap<>();
-        localizacaoServidoresDeBorda.put("Alto", 7000);
-        localizacaoServidoresDeBorda.put("Centro", 7000);
-        localizacaoServidoresDeBorda.put("Nova Betania", 7000);
-        localizacaoServidoresDeBorda.put("Vingt Rosado", 7000);
+        ConcurrentHashMap<String, String> localizacaoServidoresDeBorda = new ConcurrentHashMap<>();
+        localizacaoServidoresDeBorda.put("Alto", "192.168.0.8:7000");
+        localizacaoServidoresDeBorda.put("Centro","192.168.0.8:7000");
+        localizacaoServidoresDeBorda.put("Nova Betania", "192.168.0.8:7000");
+        localizacaoServidoresDeBorda.put("Vingt Rosado", "192.168.0.8:7000");
 
         ConcurrentHashMap<String, String> servicosRMI = new ConcurrentHashMap<>();
         servicosRMI.put("MonitoramentoClimatico", "localhost:1099");

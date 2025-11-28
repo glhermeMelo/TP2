@@ -11,12 +11,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
     private final Socket cliente;
     protected final ConcurrentHashMap<String, KeyPair> chavesClientes;
-    protected final ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda;
+    protected final ConcurrentHashMap<String, String> localizacaoServidoresDeBorda;
     protected final ConcurrentHashMap<String, String> servicosRMI;
 
     public ServidorDeLocalizacaoAceitaClientes(Socket cliente,
                                                ConcurrentHashMap<String, KeyPair> chavesClientes,
-                                               ConcurrentHashMap<String, Integer> localizacaoServidoresDeBorda,
+                                               ConcurrentHashMap<String, String> localizacaoServidoresDeBorda,
                                                ConcurrentHashMap<String, String> servicosRMI) {
         this.cliente = cliente;
         this.chavesClientes = chavesClientes;
@@ -109,7 +109,7 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
         KeyPair kpServidor = chavesClientes.get(idDispositivo);
         if (kpServidor == null) {
             System.err.println("Nenhuma chave identificada para o cliente: " + idDispositivo);
-            saida.writeObject(-1);
+            saida.writeObject("ERRO: Chave não encontrada");
             saida.flush();
             return;
         }
@@ -118,7 +118,7 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
         byte[] chaveSessao = descriptografarRSA(bytesChaveSessao, kpServidor.getPrivate());
         if (chaveSessao == null || chaveSessao.length != 32) {
             System.err.println("Falha ao decifrar chave de sessão.");
-            saida.writeObject(-1);
+            saida.writeObject("ERRO: Falha na criptografia");
             saida.flush();
             return;
         }
@@ -126,19 +126,20 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
         // Decifrar localização (ChaCha20-Poly1305)
         String localizacao = descriptografarLocalizacao(chaveSessao, nonce, payload);
 
-        Integer portaBorda = -1;
+        String enderecoBorda = "ERRO: Localização desconhecida";
 
         if (localizacao != null) {
-            portaBorda = localizacaoServidoresDeBorda.get(localizacao);
-            if (portaBorda == null) {
+            String encontrado = localizacaoServidoresDeBorda.get(localizacao);
+
+            if (encontrado == null) {
                 System.err.println("Localização não encontrada: " + localizacao);
-                portaBorda = -1;
             } else {
-                System.out.println("Localização '" + localizacao + "' mapeada para porta " + portaBorda);
+                System.out.println("Localização '" + localizacao + "' mapeada para " + encontrado);
+                enderecoBorda = encontrado;
             }
         }
 
-        saida.writeObject(portaBorda);
+        saida.writeObject(enderecoBorda);
         saida.flush();
     }
 
