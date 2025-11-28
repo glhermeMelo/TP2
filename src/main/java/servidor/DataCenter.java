@@ -98,7 +98,7 @@ public class DataCenter extends ImplServidor {
 
             Registry monitoramentoClimatico = LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
 
-            monitoramentoClimatico.rebind("MonitoramentoClimatico", stub);
+            monitoramentoClimatico.rebind("MonitoramentoClimatico", refObjRemoto);
 
             System.err.println("MonitoramentoClimatico inicializado com sucesso!");
         } catch (AccessException e) {

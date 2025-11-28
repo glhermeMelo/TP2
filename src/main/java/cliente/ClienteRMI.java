@@ -67,7 +67,6 @@ public abstract class ClienteRMI {
             System.out.println("2. Consultar valores médios");
             System.out.println("3. Relatório Completo (Todos os dados)");
             System.out.println("4. Consultar valores médios por localização");
-            System.out.println("5. Consultar valores máximos por localização");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
 
