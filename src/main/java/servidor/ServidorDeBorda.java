@@ -17,6 +17,7 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ServidorDeBorda extends ImplServidor {
     private ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos;
@@ -149,7 +150,7 @@ public class ServidorDeBorda extends ImplServidor {
             int idDispositivo = Integer.parseInt(registro.idDispositivo().replaceAll("[^0-9]", ""));
             try {
                 int id = Integer.parseInt(registro.idDispositivo().replaceAll("\\D+", ""));
-                mapaDeRegistrosClimaticos.computeIfAbsent(id, k -> new ArrayList<>()).add(registroClimatico);
+                mapaDeRegistrosClimaticos.computeIfAbsent(id, k -> new CopyOnWriteArrayList<>()).add(registroClimatico);
             } catch (NumberFormatException e) {
                 System.err.println("Erro ao converter ID do dispositivo para inteiro: " + registro.idDispositivo());
             }

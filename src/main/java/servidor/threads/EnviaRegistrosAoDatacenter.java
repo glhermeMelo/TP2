@@ -34,7 +34,6 @@ public class EnviaRegistrosAoDatacenter implements Runnable {
 
     @Override
     public void run() {
-
         while (isActive) {
             System.out.println(nomeServidorDeBorda + ": Tentando conectar ao DataCenter em " + ipDatacenter + ":" + portaDatacenter);
 
@@ -45,55 +44,48 @@ public class EnviaRegistrosAoDatacenter implements Runnable {
 
                 System.out.println(socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + " conectado ao Datacenter! ");
 
-                // 1 - enviar nome do servidor
                 saida.writeObject(nomeServidorDeBorda);
 
-                // 2 -  receber chave pública do servidor
                 Object entrada1 = entrada.readObject();
                 if (!(entrada1 instanceof PublicKey)) {
                     System.err.println("Erro ao receber chave pública do Datacenter");
-                    return;
+                    continue;
                 }
 
                 PublicKey chavePublicaDatacenter = (PublicKey) entrada1;
 
-                // 3 - Gerar chave de sessão
                 KeyGenerator keyGen = KeyGenerator.getInstance("AES");
                 keyGen.init(128);
                 SecretKey chaveSecretaAES = keyGen.generateKey();
 
-                // 4 - envia chave AES cifrada ao datacenter
                 byte[] chaveAES = cifrarRSA(chaveSecretaAES.getEncoded(), chavePublicaDatacenter);
                 saida.writeObject(chaveAES);
                 saida.flush();
 
                 if (!mapaDeRegistrosClimaticos.isEmpty()) {
                     byte[] bytesHashMap = mapaToBytes();
-
                     byte[] byesHashMapCifrado = cifrarAES(bytesHashMap, chaveSecretaAES);
 
-                    saida.writeObject(byesHashMapCifrado);
-                    saida.flush();
-
-                    System.out.println(nomeServidorDeBorda + " enviando HashMap ao Datacenter " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
+                    if (byesHashMapCifrado != null) {
+                        saida.writeObject(byesHashMapCifrado);
+                        saida.flush();
+                        System.out.println(nomeServidorDeBorda + " enviando HashMap ao Datacenter " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
+                    }
                 }
 
                 Thread.sleep(escritaMillis);
 
-            } catch (IOException e) {
-                System.err.println("Erro ao conectar ao DataCenter: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Erro na thread de envio: " + e.getMessage());
                 try {
                     Thread.sleep(escritaMillis);
-                } catch (InterruptedException e1) {
-                    System.err.println("Erro ao conectar ao DataCenter: " + e1.getMessage());
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    break;
                 }
-            } catch (ClassNotFoundException e) {
-                System.err.println("Erro ao receber chave do servidor! " + e.getMessage());
-            } catch (NoSuchAlgorithmException e) {
-                System.err.println("Erro ao gerar chaves RSA! " + e.getMessage());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
+            } catch (Throwable t) {
+                System.err.println("Erro fatal na thread de envio: " + t.getMessage());
+                t.printStackTrace();
             }
         }
     }
@@ -114,18 +106,17 @@ public class EnviaRegistrosAoDatacenter implements Runnable {
             cipher.init(Cipher.ENCRYPT_MODE, chaveSecreta);
             return cipher.doFinal(dados);
         } catch (NoSuchAlgorithmException e) {
-            System.err.println("Erro: algoritmo criptográfico não disponível no ambiente (provavelmente falta suporte ao algoritmo solicitado). Detalhe: " + e.getMessage());
+            System.err.println("Erro: algoritmo criptográfico não disponível no ambiente. Detalhe: " + e.getMessage());
         } catch (NoSuchPaddingException e) {
-            System.err.println("Erro: esquema de padding não disponível (verifique o nome do algoritmo de Cipher). Detalhe: " + e.getMessage());
+            System.err.println("Erro: esquema de padding não disponível. Detalhe: " + e.getMessage());
         } catch (InvalidKeyException e) {
-            System.err.println("Erro: chave inválida ao inicializar o cifrador — verifique se a chave pública do servidor está correta e corresponde à chave privada do servidor.");
+            System.err.println("Erro: chave inválida ao inicializar o cifrador.");
         } catch (IllegalBlockSizeException e) {
-            System.err.println("Erro: tamanho de bloco ilegal ao cifrar dados com AES — possivelmente os dados (chave de sessão) são maiores que o permitido pela chave AES.");
+            System.err.println("Erro: tamanho de bloco ilegal ao cifrar dados com AES.");
         } catch (BadPaddingException e) {
-            System.err.println("Erro de padding durante a cifragem — possível incompatibilidade de padding entre cliente e servidor (ex.: OAEP vs PKCS1).");
+            System.err.println("Erro de padding durante a cifragem.");
         } catch (Exception e) {
-            System.err.println("Erro inesperado ao cifrar/enviar a localização: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Erro inesperado ao cifrar/enviar: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
         return null;
     }
@@ -136,20 +127,18 @@ public class EnviaRegistrosAoDatacenter implements Runnable {
             cipher.init(Cipher.ENCRYPT_MODE, chavePublica);
             return cipher.doFinal(bytesMensagem);
         } catch (NoSuchAlgorithmException e) {
-            System.err.println("Erro: algoritmo criptográfico não disponível no ambiente (provavelmente falta suporte ao algoritmo solicitado). Detalhe: " + e.getMessage());
+            System.err.println("Erro: algoritmo criptográfico não disponível no ambiente. Detalhe: " + e.getMessage());
         } catch (NoSuchPaddingException e) {
-            System.err.println("Erro: esquema de padding não disponível (verifique o nome do algoritmo de Cipher). Detalhe: " + e.getMessage());
+            System.err.println("Erro: esquema de padding não disponível. Detalhe: " + e.getMessage());
         } catch (InvalidKeyException e) {
-            System.err.println("Erro: chave inválida ao inicializar o cifrador — verifique se a chave pública do servidor está correta e corresponde à chave privada do servidor.");
+            System.err.println("Erro: chave inválida ao inicializar o cifrador.");
         } catch (IllegalBlockSizeException e) {
-            System.err.println("Erro: tamanho de bloco ilegal ao cifrar dados com RSA — possivelmente os dados (chave de sessão) são maiores que o permitido pela chave RSA.");
+            System.err.println("Erro: tamanho de bloco ilegal ao cifrar dados com RSA.");
         } catch (BadPaddingException e) {
-            System.err.println("Erro de padding durante a cifragem — possível incompatibilidade de padding entre cliente e servidor (ex.: OAEP vs PKCS1).");
+            System.err.println("Erro de padding durante a cifragem.");
         } catch (Exception e) {
-            System.err.println("Erro inesperado ao cifrar/enviar a localização: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Erro inesperado ao cifrar/enviar: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
         return null;
     }
-
 }
