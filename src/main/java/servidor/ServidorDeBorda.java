@@ -12,7 +12,6 @@ import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -38,8 +37,7 @@ public class ServidorDeBorda extends ImplServidor {
                 new EnviaRegistrosAoDatacenter(mapaDeRegistrosClimaticos, ipDatacenter,
                         portaDatacenter, nome, 5000);
 
-        Thread enviar = new Thread(enviarAoDatacenter);
-        enviar.start();
+        new Thread(enviarAoDatacenter).start();
 
         new Thread(this::ouvirUDP).start();
 
@@ -52,7 +50,8 @@ public class ServidorDeBorda extends ImplServidor {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 try {
                     serverSocket.close();
-                } catch (IOException ignored) {
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
             System.out.println(nome + " finalizado.");
@@ -97,7 +96,7 @@ public class ServidorDeBorda extends ImplServidor {
                     // Ignora se não houver segundo objeto ou erro de leitura (pacote inválido)
                 }
 
-                // === CASO 1: Handshake (ID + PublicKey) ===
+                // === CASO 1: Handshake ===
                 if (entrada2 instanceof PublicKey) {
                     // Cria uma cópia dos dados para a thread de handshake processar do início
                     byte[] dados = new byte[pacoteUDP.getLength()];
@@ -108,10 +107,8 @@ public class ServidorDeBorda extends ImplServidor {
                             new ServidorDeBordaAceitaMicrodispositivo(socket, copia, chavesClientes);
 
                     new Thread(trocaChaves).start();
-                }
-                // === CASO 2: Dados Cifrados (ID + byte[] chaveSessao + ...) ===
-                else if (entrada2 instanceof byte[]) {
-                    // processarPacoteUDP (na superclasse) já lê a sequência: ID -> ChaveEnc -> Nonce -> PayloadEnc
+                    // === CASO 2: Mensagem cifrada ===
+                } else if (entrada2 instanceof byte[]) {
                     String registroClimatico = processarPacoteUDP(pacoteUDP);
 
                     if (registroClimatico != null) {
@@ -131,6 +128,33 @@ public class ServidorDeBorda extends ImplServidor {
             System.err.println("Erro ao ler pacote UDP: " + e.getMessage());
         } catch (ClassNotFoundException e) {
             System.err.println("Erro de classe não encontrada no pacote UDP: " + e.getMessage());
+        }
+    }
+
+    private synchronized void salvarRegistroClimatico(String registroClimatico) {
+        try {
+            Gson gson = new Gson();
+
+            //Instancia novo registro
+            RegistroClimatico registro = gson.fromJson(registroClimatico, RegistroClimatico.class);
+
+            if (registro != null) {
+                AnalisadorDeRegistrosClimaticos.analisarRegistroClimatico(registro);
+            } else {
+                System.err.println("Erro ao instanciar o registro climatico");
+                return;
+            }
+
+            //Pega id e checa se existe no mapa ou nao
+            int idDispositivo = Integer.parseInt(registro.idDispositivo().replaceAll("[^0-9]", ""));
+            try {
+                int id = Integer.parseInt(registro.idDispositivo().replaceAll("\\D+", ""));
+                mapaDeRegistrosClimaticos.computeIfAbsent(id, k -> new ArrayList<>()).add(registroClimatico);
+            } catch (NumberFormatException e) {
+                System.err.println("Erro ao converter ID do dispositivo para inteiro: " + registro.idDispositivo());
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao salvar registro climatico: " + e.getMessage());
         }
     }
 
@@ -188,33 +212,6 @@ public class ServidorDeBorda extends ImplServidor {
 
     public void setChavesClientes(ConcurrentHashMap<String, KeyPair> chavesClientes) {
         this.chavesClientes = chavesClientes;
-    }
-
-    private synchronized void salvarRegistroClimatico(String registroClimatico) {
-        try {
-            Gson gson = new Gson();
-
-            //Instancia novo registro
-            RegistroClimatico registro = gson.fromJson(registroClimatico, RegistroClimatico.class);
-
-            if (registro != null) {
-                AnalisadorDeRegistrosClimaticos.analisarRegistroClimatico(registro);
-            } else {
-                System.err.println("Erro ao instanciar o registro climatico");
-                return;
-            }
-
-            //Pega id e checa se existe no mapa ou nao
-            int idDispositivo = Integer.parseInt(registro.idDispositivo().replaceAll("[^0-9]", ""));
-            try {
-                int id = Integer.parseInt(registro.idDispositivo().replaceAll("\\D+", ""));
-                mapaDeRegistrosClimaticos.computeIfAbsent(id, k -> new ArrayList<>()).add(registroClimatico);
-            } catch (NumberFormatException e) {
-                System.err.println("Erro ao converter ID do dispositivo para inteiro: " + registro.idDispositivo());
-            }
-        } catch (Exception e) {
-            System.err.println("Erro ao salvar registro climatico: " + e.getMessage());
-        }
     }
 
     public static void main(String[] args) {

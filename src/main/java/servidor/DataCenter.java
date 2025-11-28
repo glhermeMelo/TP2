@@ -45,14 +45,22 @@ public class DataCenter extends ImplServidor {
         System.out.println("DataCenter iniciado na porta " + this.porta);
 
         try (ServerSocket serverSocket = new ServerSocket(porta)) {
-            Thread calculadoraMaxima = new Thread(threadMaximos);
-            calculadoraMaxima.start();
+            Thread calculadoraMaximosGlobais = new Thread(threadMaximos);
+            calculadoraMaximosGlobais.start();
 
-            Thread calculadoraMedio = new Thread(threadMedios);
-            calculadoraMedio.start();
+            Thread calculadoraMediosGlobais = new Thread(threadMedios);
+            calculadoraMediosGlobais.start();
 
-            listaThreads.add(calculadoraMaxima);
-            listaThreads.add(calculadoraMedio);
+            Thread calculadoraMaximoSensor = new Thread(threadMaximasPorSensor);
+            calculadoraMaximoSensor.start();
+
+            Thread calculadoraMediosSensor = new Thread(threadMediasPorSensor);
+            calculadoraMediosSensor.start();
+
+            listaThreads.add(calculadoraMaximosGlobais);
+            listaThreads.add(calculadoraMediosGlobais);
+            listaThreads.add(calculadoraMaximoSensor);
+            listaThreads.add(calculadoraMediosSensor);
 
             implementarRMI();
 
@@ -60,8 +68,11 @@ public class DataCenter extends ImplServidor {
                 Socket cliente = serverSocket.accept();
                 Thread aceitadora = new Thread(new DataCenterAceitaServidoresDeBorda(cliente, chavesClientes, dadosGlobais));
                 aceitadora.start();
-                calculadoraMaxima.join();
-                calculadoraMedio.join();
+
+                calculadoraMaximosGlobais.join();
+                calculadoraMediosGlobais.join();
+                calculadoraMaximoSensor.join();
+                calculadoraMediosSensor.join();
                 aceitadora.join();
 
                 listaThreads.add(aceitadora);
@@ -87,7 +98,7 @@ public class DataCenter extends ImplServidor {
 
             Registry monitoramentoClimatico = LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
 
-            monitoramentoClimatico.rebind("MonitoramentoClimatico", refObjRemoto);
+            monitoramentoClimatico.rebind("MonitoramentoClimatico", skeleton);
 
             System.err.println("MonitoramentoClimatico inicializado com sucesso!");
         } catch (AccessException e) {

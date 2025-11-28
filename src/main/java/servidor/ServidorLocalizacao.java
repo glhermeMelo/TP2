@@ -26,10 +26,8 @@ public class ServidorLocalizacao extends ImplServidor {
     protected void rodar() {
         System.out.println(nome + " iniciado em " + ip + ":" + porta);
 
-        // 1. Thread para Clientes TCP (Handshake e RMI)
         new Thread(this::ouvirTCP).start();
 
-        // 2. Thread para Microdispositivos UDP (Envio de Localização)
         new Thread(this::ouvirUDP).start();
     }
 
@@ -72,38 +70,35 @@ public class ServidorLocalizacao extends ImplServidor {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(pacote.getData(), 0, pacote.getLength());
              ObjectInputStream ois = new ObjectInputStream(bais)) {
 
-            // Protocolo UDP: Sempre envia ID (String) primeiro
+            // Protocolo UDP: Sempre envia ID primeiro
             Object entrada1 = ois.readObject();
             if (!(entrada1 instanceof String)) return;
             String idDispositivo = (String) entrada1;
 
             Object entrada2 = ois.readObject();
 
-            // CASO 1: Handshake (Troca de Chaves) - Geralmente feito via TCP, mas suportado aqui se necessário
+            // === CASO 1: Handshake ===
             if (entrada2 instanceof PublicKey) {
                 System.out.println("UDP: Handshake solicitado por " + idDispositivo);
                 KeyPair chaves = chavesClientes.computeIfAbsent(idDispositivo, k -> gerarParDeChavesRSA());
                 responderUDP(socket, pacote, chaves.getPublic());
-            }
-            // CASO 2: Solicitação de Localização (Cifrada)
-            else if (entrada2 instanceof byte[]) {
+
+                // === CASO 2: Mensagem cifrada com localizacao ===
+            } else if (entrada2 instanceof byte[]) {
                 System.out.println("UDP: Localização recebida de " + idDispositivo);
                 byte[] sessaoEnc = (byte[]) entrada2;
 
-                // Leitura segura dos próximos objetos
                 byte[] nonce = (byte[]) ois.readObject();
                 byte[] payloadEnc = (byte[]) ois.readObject();
 
-                // Decifra e obtém o endereço IP:Porta como String
+                // Decifra e obtém o endereço IP:Porta
                 String enderecoBorda = decifrarEObterEndereco(idDispositivo, sessaoEnc, nonce, payloadEnc);
 
-                // Envia a resposta (String) de volta para o microdispositivo
                 responderUDP(socket, pacote, enderecoBorda);
             }
 
         } catch (Exception e) {
             System.err.println("Erro processando UDP de " + pacote.getAddress() + ": " + e.getMessage());
-            // Em caso de erro grave na leitura, tentamos enviar um erro genérico para destravar o cliente
             responderUDP(socket, pacote, "ERRO: Falha no processamento do pacote");
         }
     }
@@ -134,7 +129,7 @@ public class ServidorLocalizacao extends ImplServidor {
             }
 
             System.out.println("Localização '" + localizacao + "' mapeada para " + endereco);
-            return endereco; // Retorna "IP:Porta"
+            return endereco;
 
         } catch (Exception e) {
             System.err.println("Erro criptografia: " + e.getMessage());

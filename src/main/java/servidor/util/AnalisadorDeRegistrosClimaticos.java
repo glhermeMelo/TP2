@@ -9,10 +9,10 @@ public  class AnalisadorDeRegistrosClimaticos {
     private static final Double MAXIMOSO2 = 40D;
     private static final Double MAXIMOPM2_5 = 50D;
     private static final Double MAXIMOPM10 = 100D;
-    private static final Double MINIMOUMIDADE = 25D;
-    private static final Double MAXIMOTEMPERATURA = 32D;
-    private static final Double MINIMOTEMPERATURA = 20D;
-    private static final Double MAXIMORUIDO = 55D;
+    private static final Double MINIMOUMIDADE = 50D;
+    private static final Double MAXIMOTEMPERATURA = 40D;
+    private static final Double MINIMOTEMPERATURA = 10D;
+    private static final Double MAXIMORUIDO = 60D;
     private static final Double MAXIMORADIACAOUV = 5D;
 
     public static void analisarRegistroClimatico(RegistroClimatico registroClimatico) {
@@ -30,7 +30,6 @@ public  class AnalisadorDeRegistrosClimaticos {
         String id = registroClimatico.idDispositivo();
         String localizacao = registroClimatico.localizacao();
 
-        // Qualidade do Ar
         if (co2 > MAXIMOCO2) emitirAlerta(id, localizacao, "CO2 Crítico", co2 + " ppm");
         if (co > MAXIMOCO)   emitirAlerta(id, localizacao, "Nível de CO Alto", co + " ppm");
         if (no2 > MAXIMONO2) emitirAlerta(id, localizacao, "Poluição NO2 Alta", no2 + " µg/m³");
@@ -38,12 +37,10 @@ public  class AnalisadorDeRegistrosClimaticos {
         if (pm25 > MAXIMOPM2_5)  emitirAlerta(id, localizacao, "Partículas Finas (PM2.5) Altas", pm25 + " µg/m³");
         if (pm10 > MAXIMOPM10)   emitirAlerta(id, localizacao, "Partículas Inaláveis (PM10) Altas", pm10 + " µg/m³");
 
-        // Condições Ambientais
         if (temperatura > MAXIMOTEMPERATURA) emitirAlerta(id, localizacao, "Calor Extremo", temperatura + " °C");
         if (temperatura < MINIMOTEMPERATURA) emitirAlerta(id, localizacao, "Frio Intenso", temperatura + " °C");
         if (umidade < MINIMOUMIDADE)  emitirAlerta(id, localizacao, "Baixa Umidade", umidade + "%");
 
-        // Outros
         if (ruido > MAXIMORUIDO) emitirAlerta(id, localizacao, "Poluição Sonora", ruido + " dB");
         if (uv > MAXIMORADIACAOUV) emitirAlerta(id, localizacao, "Radiação UV Perigosa", "Índice " + uv);
     }

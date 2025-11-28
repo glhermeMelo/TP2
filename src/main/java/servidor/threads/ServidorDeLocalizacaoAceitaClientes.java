@@ -66,9 +66,8 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
                 saida.writeObject(chavesServidor.getPublic());
                 saida.flush();
                 System.out.println("Troca de chaves RSA concluída com " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
-            }
-            // === CASO B: Recebimento de Localização (Recebeu byte[]) ===
-            else if (entrada2 instanceof byte[]) {
+                // Caso RMI
+            } else if (entrada2 instanceof byte[]) {
                 byte[] bytesChaveSessao = (byte[]) entrada2;
 
                 // 3 - ler nonce
@@ -94,7 +93,7 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
             }
 
         } catch (EOFException e) {
-            // Conexão encerrada normalmente
+            e.printStackTrace();
         } catch (Exception e) {
             System.err.println("Erro no servidor: " + e.getMessage());
             e.printStackTrace();

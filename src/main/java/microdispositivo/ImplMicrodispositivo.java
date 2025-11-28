@@ -52,24 +52,23 @@ public abstract class ImplMicrodispositivo {
         rodar();
     }
 
-    //A threadGeradora já para em intervalos por causa do sleep no Runnable
+    //A threadGeradora ja para em intervalos por causa do sleep no Runnable
     protected void rodar() {
-        // 1. Handshake com Servidor de Localização (Agora via UDP)
+        // 1. Handshake com Servidor de Localizacao
         realizarHandshakeUDP(this.ip, portaServidorLocalizacao, chavesServidorLocalizacao);
 
-        // 2. Envia localização cifrada e descobre o IP do Servidor de Borda
-        criptografarLocalizacao(); // Certifique-se que este método também foi corrigido conforme instrução anterior
+        // 2. Envia localização cifrada para descobrir a localizacao do servidor de borda
+        criptografarLocalizacao();
 
         if (portaServidorDeBorda <= 0 || this.enderecoBorda == null) {
             System.err.println("Dados do servidor de borda inválidos! Abortando.");
             return;
         }
 
-        // 3. Handshake com Servidor de Borda (Obrigatório ser UDP)
-        // IMPORTANTE: Use 'this.enderecoBorda' aqui, não 'this.ip'
+        // 3. Handshake com Servidor de Borda
         realizarHandshakeUDP(this.enderecoBorda, portaServidorDeBorda, chavesServidorDeBorda);
 
-        // Inicia threads de geração e envio...
+        // Thread para geracao de dados
         if (threadGeradora == null || !threadGeradora.isAlive()) {
             threadGeradora = new Thread(geradorDeLeituras);
             threadGeradora.start();
@@ -153,24 +152,20 @@ public abstract class ImplMicrodispositivo {
             // DeviceId — assumimos getter no gerador
             String deviceId = geradorDeLeituras.getIdDispositivo();
 
-            // 4) envia id + chave sessao + nonce + payloadEncrypted ao servidor de localização
+            // 4) envia id + chave sessao + nonce + payloadEncrypted ao servidor de localizacao
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream saida = new ObjectOutputStream(baos);
 
             // Envia na ordem esperada pelo servidor
             saida.writeObject(deviceId);
-            saida.writeObject(bytesEncriptados);              // sessionKeyEncrypted
+            saida.writeObject(bytesEncriptados);
             saida.writeObject(nonce);
-            saida.writeObject(bytesEncriptadosTextoPlano);    // payload
+            saida.writeObject(bytesEncriptadosTextoPlano);
             saida.flush();
             byte[] dadosEnviar = baos.toByteArray();
 
-            // --- CORREÇÃO AQUI ---
-            // Usamos 'this.ip' (que é o IP do servidor de localização configurado no construtor)
-            // e não 'this.enderecoBorda' (que ainda é null neste momento).
             InetAddress enderecoServidor = InetAddress.getByName(this.ip);
 
-            // A porta deve ser a portaServidorLocalizacao (ex: 6000)
             DatagramPacket pacoteEnvio = new DatagramPacket(dadosEnviar, dadosEnviar.length, enderecoServidor, portaServidorLocalizacao);
             socketUDP.send(pacoteEnvio);
             System.out.println("Localização (cifrada) enviada com sucesso para " + ip + ":" + portaServidorLocalizacao);
@@ -251,7 +246,7 @@ public abstract class ImplMicrodispositivo {
             this.socketUDP.send(pacoteEnvio);
 
             // 4 - Aguarda resposta (Chave Pública do Servidor)
-            this.socketUDP.setSoTimeout(5000); // Timeout de 5s
+            this.socketUDP.setSoTimeout(5000);
             byte[] buffer = new byte[4096];
             DatagramPacket pacoteResp = new DatagramPacket(buffer, buffer.length);
             this.socketUDP.receive(pacoteResp);
@@ -262,11 +257,10 @@ public abstract class ImplMicrodispositivo {
             Object obj = ois.readObject();
 
             if (obj instanceof PublicKey) {
-                PublicKey pkServidor = (PublicKey) obj;
+                PublicKey chavePublicaServidor = (PublicKey) obj;
 
-                // Salva o par de chaves (Privada Local + Pública do Servidor)
-                KeyPair kpCompleto = new KeyPair(pkServidor, kpLocal.getPrivate());
-                chavesServidor.put(portaServidor, kpCompleto);
+                KeyPair kp = new KeyPair(chavePublicaServidor, kpLocal.getPrivate());
+                chavesServidor.put(portaServidor, kp);
 
                 System.out.println("Handshake UDP concluído com " + ipDestino + ":" + portaServidor);
             } else {
@@ -326,9 +320,6 @@ public abstract class ImplMicrodispositivo {
 
             byte[] mensagem = baos.toByteArray();
 
-            // --- CORREÇÃO AQUI ---
-            // Alterado de 'InetAddress.getByName(ip)' para 'InetAddress.getByName(this.enderecoBorda)'
-            // para garantir que enviamos para o Servidor de Borda descoberto, e não para o Servidor de Localização.
             if (this.enderecoBorda == null) {
                 System.err.println("Erro: Endereço do servidor de borda não foi definido.");
                 return;

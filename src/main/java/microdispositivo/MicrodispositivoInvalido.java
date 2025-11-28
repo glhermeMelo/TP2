@@ -13,7 +13,6 @@ public class MicrodispositivoInvalido extends ImplMicrodispositivo {
 
     @Override
     protected void realizarHandshakeUDP(String ipDestino, int portaServidor, ConcurrentHashMap<Integer, KeyPair> chavesServidor) {
-        // 1. Executa o handshake padrão para garantir que o socket está aberto e o fluxo iniciou
         super.realizarHandshakeUDP(ipDestino, portaServidor, chavesServidor);
 
         if (!chavesServidor.containsKey(portaServidor)) {
@@ -21,7 +20,7 @@ public class MicrodispositivoInvalido extends ImplMicrodispositivo {
         }
 
         try {
-            // 2. Gera um par de chaves RSA aleatório (que não pertence ao servidor real)
+            // Gera um par de chaves RSA aleatório (que não pertence ao servidor real)
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(2048, new SecureRandom());
             KeyPair chaveFalsa = kpg.generateKeyPair();

@@ -62,25 +62,23 @@ public class EnviaRegistrosAoDatacenter implements Runnable {
                 keyGen.init(128);
                 SecretKey chaveSecretaAES = keyGen.generateKey();
 
-                // 4 - envia chave AES cifrada ao Datacenter
+                // 4 - envia chave AES cifrada ao datacenter
                 byte[] chaveAES = cifrarRSA(chaveSecretaAES.getEncoded(), chavePublicaDatacenter);
                 saida.writeObject(chaveAES);
                 saida.flush();
 
-                while (isActive) {
-                    if (!mapaDeRegistrosClimaticos.isEmpty()) {
-                        byte[] bytesHashMap = cifrarMapa();
+                if (!mapaDeRegistrosClimaticos.isEmpty()) {
+                    byte[] bytesHashMap = mapaToBytes();
 
-                        byte[] byesHashMapCifrado = cifrarAES(bytesHashMap, chaveSecretaAES);
+                    byte[] byesHashMapCifrado = cifrarAES(bytesHashMap, chaveSecretaAES);
 
-                        saida.writeObject(byesHashMapCifrado);
-                        saida.flush();
+                    saida.writeObject(byesHashMapCifrado);
+                    saida.flush();
 
-                        System.out.println(nomeServidorDeBorda + " enviando HashMap ao Datacenter " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
-                    }
-
-                    Thread.sleep(escritaMillis);
+                    System.out.println(nomeServidorDeBorda + " enviando HashMap ao Datacenter " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
                 }
+
+                Thread.sleep(escritaMillis);
 
             } catch (IOException e) {
                 System.err.println("Erro ao conectar ao DataCenter: " + e.getMessage());
@@ -100,7 +98,7 @@ public class EnviaRegistrosAoDatacenter implements Runnable {
         }
     }
 
-    private byte[] cifrarMapa() {
+    private byte[] mapaToBytes() {
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
             objectOutputStream.writeObject(mapaDeRegistrosClimaticos);
