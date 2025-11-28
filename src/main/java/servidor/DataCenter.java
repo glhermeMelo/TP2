@@ -1,5 +1,7 @@
 package servidor;
 
+import servidorRMI.threads.CalculaMaximasPorSensor;
+import servidorRMI.threads.CalculaMediasPorSensor;
 import servidorRMI.threads.CalculaValorMaximo;
 import servidorRMI.threads.CalculaValoresMedios;
 import entities.RegistroClimatico;
@@ -24,6 +26,8 @@ public class DataCenter extends ImplServidor {
     private List<Thread> listaThreads;
     private CalculaValorMaximo threadMaximos;
     private CalculaValoresMedios threadMedios;
+    private CalculaMaximasPorSensor threadMaximasPorSensor;
+    private CalculaMediasPorSensor threadMediasPorSensor;
 
     public DataCenter(int porta, String ip, String nome) {
         super(porta, ip, nome);
@@ -31,6 +35,8 @@ public class DataCenter extends ImplServidor {
         listaThreads = new ArrayList<>();
         this.threadMaximos = new CalculaValorMaximo(dadosGlobais, 5000);
         this.threadMedios = new CalculaValoresMedios(dadosGlobais, 5000);
+        this.threadMaximasPorSensor = new CalculaMaximasPorSensor(dadosGlobais, 5000);
+        this.threadMediasPorSensor = new CalculaMediasPorSensor(dadosGlobais, 5000);
         rodar();
     }
 
@@ -71,7 +77,8 @@ public class DataCenter extends ImplServidor {
 
     private void implementarRMI() {
         try {
-            ImplMonitoramentoClimatico refObjRemoto = new ImplMonitoramentoClimatico(threadMedios, threadMaximos);
+            ImplMonitoramentoClimatico refObjRemoto = new ImplMonitoramentoClimatico(threadMedios,
+                    threadMaximos, threadMediasPorSensor, threadMaximasPorSensor);
 
             IMonitoramentoRMI skeleton = (IMonitoramentoRMI) UnicastRemoteObject
                     .exportObject(refObjRemoto, 0);
