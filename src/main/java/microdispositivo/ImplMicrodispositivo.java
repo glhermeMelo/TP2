@@ -235,12 +235,12 @@ public abstract class ImplMicrodispositivo {
             // 2 - Prepara o pacote de Handshake (ID + Chave Pública Local)
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(deviceId);            // 1º Objeto: ID (String)
-            oos.writeObject(kpLocal.getPublic()); // 2º Objeto: Chave Pública (PublicKey)
+            oos.writeObject(deviceId);
+            oos.writeObject(kpLocal.getPublic());
             oos.flush();
             byte[] dados = baos.toByteArray();
 
-            // 3 - Envia via UDP (Socket já existente)
+            // 3 - Envia via UDP
             InetAddress endereco = InetAddress.getByName(ipDestino);
             DatagramPacket pacoteEnvio = new DatagramPacket(dados, dados.length, endereco, portaServidor);
             this.socketUDP.send(pacoteEnvio);

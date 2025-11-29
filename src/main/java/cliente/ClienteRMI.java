@@ -26,11 +26,6 @@ public abstract class ClienteRMI {
     public ClienteRMI(String nome, int porta) {
         this.nome = nome;
         this.porta = porta;
-        rodar();
-    }
-
-    protected void rodar() {
-
     }
 
     private KeyPair gerarParDeChavesRSA() {

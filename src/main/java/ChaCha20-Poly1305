@@ -1,0 +1,17 @@
+ChaCha20 (Confidencialidade)
+- Cifra de fluxo
+- Utiliza uma matriz 4x4 (16 números de 8 bytes)
+- Secret key: 32 bytes
+- Counter: Número que incrementa a cada bloco de 64 bytes gerado, para diminuir a chance de ocorrerem padrões
+- Nonce Número único de 12 bytes gerado uma vez por mensagem
+
+- Usa operações simples (soma, rotação e XOR) para garantir difusão e aleatóriedade em 20 rodadas
+- Após as 20 rodadas, combina o bloco com o texto plano para criar o texto cifrado
+
+Poly1305 (Integridade e Autenticidade)
+- É um MAC
+- Serve como o "hash" da mensagem, gera tags na mensagem cifrada e na chave, garante que nenhum bit pode ser alterado
+
+https://datatracker.ietf.org/doc/rfc8439/
+
+https://datatracker.ietf.org/doc/html/rfc8446

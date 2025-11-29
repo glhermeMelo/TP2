@@ -19,7 +19,6 @@ public abstract class ImplServidor {
     protected ServerSocket serverSocket;
     protected ConcurrentHashMap<String, KeyPair> chavesClientes;
 
-
     protected ImplServidor(int porta, String ip, String nome) {
         this.porta = porta;
         this.ip = ip;
