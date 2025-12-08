@@ -2,16 +2,15 @@ package servidor;
 
 import com.google.gson.Gson;
 import entities.RegistroClimatico;
-import servidor.threads.EnviaRegistrosAoDatacenter;
+import servidor.threads.EnviaRegistros;
 import servidor.threads.ServidorDeBordaAceitaMicrodispositivo;
 import servidor.util.AnalisadorDeRegistrosClimaticos;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.List;
@@ -22,22 +21,28 @@ public class ServidorDeBorda extends ImplServidor {
     private ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos;
     private final String ipDatacenter;
     private final int portaDatacenter;
+    private List<String> blacklist;
+    private int portaIDS;
 
-    public ServidorDeBorda(int porta, String ip, String nome, String ipDatacenter, int portaDatacenter) {
+    public ServidorDeBorda(int porta, String ip, String nome, String ipDatacenter, int portaDatacenter, int portaIDS) {
         super(porta, ip, nome);
         mapaDeRegistrosClimaticos = new ConcurrentHashMap<>();
         this.ipDatacenter = ipDatacenter;
         this.portaDatacenter = portaDatacenter;
+        blacklist = new CopyOnWriteArrayList<>();
+        this.portaIDS = portaIDS;
         rodar();
     }
 
     @Override
     protected void rodar() {
-        EnviaRegistrosAoDatacenter enviarAoDatacenter =
-                new EnviaRegistrosAoDatacenter(mapaDeRegistrosClimaticos, ipDatacenter,
+        EnviaRegistros enviarAoDatacenter =
+                new EnviaRegistros(mapaDeRegistrosClimaticos, ipDatacenter,
                         portaDatacenter, nome, 5000);
 
         new Thread(enviarAoDatacenter).start();
+
+        new Thread(this::ouvidIDS).start();
 
         new Thread(this::ouvirUDP).start();
 
@@ -81,24 +86,49 @@ public class ServidorDeBorda extends ImplServidor {
         }
     }
 
+    private void ouvidIDS() {
+        System.out.println(nome + " ouvindo comandos do seguranca.IDS na porta " + portaIDS);
+        try (ServerSocket serverSocketAdmin = new ServerSocket(portaIDS)) {
+            while (isActive) {
+                Socket socket = serverSocketAdmin.accept();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                String comando = reader.readLine();
+
+                if (comando != null && comando.startsWith("BLOQUEAR:")) {
+                    String idParaBloquear = comando.split(":")[1];
+                    blacklist.add(idParaBloquear);
+                    System.err.println("!!! [BORDA] COMANDO RECEBIDO: Dispositivo " + idParaBloquear + " adicionado à BLACKLIST !!!");
+                }
+                socket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Erro na thread de gerência do seguranca.IDS: " + e.getMessage());
+        }
+    }
+
     private void analisarPacote(DatagramSocket socket, DatagramPacket pacoteUDP) {
         try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(pacoteUDP.getData(), 0, pacoteUDP.getLength()))) {
 
             Object entrada1 = ois.readObject();
 
             if (entrada1 instanceof String) {
+                String idDispositivo = (String) entrada1;
+
+                if (blacklist.contains(idDispositivo)) {
+                    System.out.println("[BLOCKED] Pacote ignorado de dispositivo banido: " + idDispositivo);
+                    return;
+                }
 
                 // 2. Lê o segundo objeto para distinguir Handshake de Envio de Dados
                 Object entrada2 = null;
                 try {
                     entrada2 = ois.readObject();
                 } catch (Exception e) {
-                    // Ignora se não houver segundo objeto ou erro de leitura (pacote inválido)
+
                 }
 
                 // === CASO 1: Handshake ===
                 if (entrada2 instanceof PublicKey) {
-                    // Cria uma cópia dos dados para a thread de handshake processar do início
                     byte[] dados = new byte[pacoteUDP.getLength()];
                     System.arraycopy(pacoteUDP.getData(), 0, dados, 0, pacoteUDP.getLength());
                     DatagramPacket copia = new DatagramPacket(dados, dados.length, pacoteUDP.getAddress(), pacoteUDP.getPort());
@@ -221,7 +251,8 @@ public class ServidorDeBorda extends ImplServidor {
                         "192.168.0.8",
                         "Borda-1",
                         "192.168.0.8",
-                        8000);
+                        8000,
+                        6500);
 
     }
 }

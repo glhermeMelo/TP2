@@ -12,7 +12,7 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class EnviaRegistrosAoDatacenter implements Runnable {
+public class EnviaRegistros implements Runnable {
     private final ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos;
     private final String ipDatacenter;
     private final int portaDatacenter;
@@ -20,11 +20,11 @@ public class EnviaRegistrosAoDatacenter implements Runnable {
     private boolean isActive = true;
     private long escritaMillis;
 
-    public EnviaRegistrosAoDatacenter(ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos,
-                                      String ipDatacenter,
-                                      int portaDatacenter,
-                                      String nomeServidorDeBorda,
-                                      long escritaMillis) {
+    public EnviaRegistros(ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos,
+                          String ipDatacenter,
+                          int portaDatacenter,
+                          String nomeServidorDeBorda,
+                          long escritaMillis) {
         this.mapaDeRegistrosClimaticos = mapaDeRegistrosClimaticos;
         this.ipDatacenter = ipDatacenter;
         this.portaDatacenter = portaDatacenter;

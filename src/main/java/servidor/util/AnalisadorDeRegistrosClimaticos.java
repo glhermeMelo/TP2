@@ -2,6 +2,10 @@ package servidor.util;
 
 import entities.RegistroClimatico;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+
 public  class AnalisadorDeRegistrosClimaticos {
     private static final Double MAXIMOCO2 = 400D;
     private static final Double MAXIMOCO = 11D;
@@ -10,10 +14,13 @@ public  class AnalisadorDeRegistrosClimaticos {
     private static final Double MAXIMOPM2_5 = 50D;
     private static final Double MAXIMOPM10 = 100D;
     private static final Double MINIMOUMIDADE = 50D;
-    private static final Double MAXIMOTEMPERATURA = 40D;
-    private static final Double MINIMOTEMPERATURA = 10D;
+    private static final Double MAXIMOTEMPERATURA = 30D;
+    private static final Double MINIMOTEMPERATURA = 0D;
     private static final Double MAXIMORUIDO = 60D;
     private static final Double MAXIMORADIACAOUV = 5D;
+
+    private static final String IP_IDS = "localhost";
+    private static final int PORTA_IDS = 6500;
 
     public static void analisarRegistroClimatico(RegistroClimatico registroClimatico) {
         double co2 = Double.parseDouble(registroClimatico.cO2());
@@ -51,5 +58,14 @@ public  class AnalisadorDeRegistrosClimaticos {
         System.err.println("Dispositivo: " + id + " | Local: " + local);
         System.err.println("Valor medido: " + valor);
         System.err.println("=====================================================");
+
+        try (Socket socket = new Socket(IP_IDS, PORTA_IDS);
+            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
+                String payload = "ANOMALIA|ALERTA|" + id + "|" + tipoAlerta + " em " + local;
+                writer.println(payload);
+
+            } catch (IOException e) {
+            System.err.println("Erro ao notificar seguranca.IDS: " + e.getMessage());
+        }
     }
 }

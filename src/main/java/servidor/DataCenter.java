@@ -5,7 +5,7 @@ import servidorRMI.threads.CalculaMediasPorSensor;
 import servidorRMI.threads.CalculaValorMaximo;
 import servidorRMI.threads.CalculaValoresMedios;
 import entities.RegistroClimatico;
-import servidor.threads.DataCenterAceitaServidoresDeBorda;
+import servidor.threads.ProxyAceitaServidoresDeBorda;
 import servidorRMI.IMonitoramentoRMI;
 import servidorRMI.ImplMonitoramentoClimatico;
 
@@ -66,7 +66,7 @@ public class DataCenter extends ImplServidor {
 
             while (isActive) {
                 Socket cliente = serverSocket.accept();
-                Thread aceitadora = new Thread(new DataCenterAceitaServidoresDeBorda(cliente, chavesClientes, dadosGlobais));
+                Thread aceitadora = new Thread(new ProxyAceitaServidoresDeBorda(cliente, chavesClientes, dadosGlobais));
                 aceitadora.start();
 
                 listaThreads.add(aceitadora);
@@ -102,7 +102,7 @@ public class DataCenter extends ImplServidor {
 
     public static void main(String[] args) {
         DataCenter dataCenter = new DataCenter(
-                8000,
+                9000,
                 "192.168.0.8",
                 "DT-1");
     }

@@ -11,11 +11,20 @@ import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public class DataCenterAceitaServidoresDeBorda implements Runnable {
+public class ProxyAceitaServidoresDeBorda implements Runnable {
     private final Socket cliente;
-    private ConcurrentHashMap<Integer, List<RegistroClimatico>> dadosGlobais;
     private ConcurrentHashMap<String, KeyPair> chavesClientes;
+    private ConcurrentHashMap<String, KeyPair> chavesDatacenter;
+    private ConcurrentHashMap<Integer, List<String>> bufferRegistros;
+
+    private final String ipDatacenter;
+    private final int portaDatacenter;
+    private Socket socketDatacenter;
+    private ObjectOutputStream outDatacenter;
+    private ObjectInputStream inDatacenter;
+
     private boolean isActive = true;
     private ObjectInputStream entrada;
     private ObjectOutputStream saida;
@@ -24,13 +33,23 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
     private String idCliente;
     private SecretKey chaveSecretaCliente;
 
-    public DataCenterAceitaServidoresDeBorda(
+    public ProxyAceitaServidoresDeBorda(
             Socket cliente,
-            ConcurrentHashMap<String,KeyPair> chavesClientes,
-            ConcurrentHashMap<Integer, List<RegistroClimatico>> dadosGlobais) {
-        this.cliente = cliente;
-        this.dadosGlobais = dadosGlobais;
+            String ipDatacenter,
+            int portaDatacenter,
+            ConcurrentHashMap<String, KeyPair> chavesClientes,
+            ConcurrentHashMap<String, KeyPair> chavesDatacenter) {
+
+        this.ipDatacenter = ipDatacenter;
+        this.portaDatacenter = portaDatacenter;
         this.chavesClientes = chavesClientes;
+        this.chavesDatacenter = chavesDatacenter;
+        this.cliente = cliente;
+        this.bufferRegistros = new ConcurrentHashMap<>();
+
+        EnviaRegistros threadEnviaRegistros = new EnviaRegistros(bufferRegistros, ipDatacenter, portaDatacenter, "Proxy", 5000);
+        Thread thread = new Thread(threadEnviaRegistros);
+        thread.start();
     }
 
     @Override
@@ -119,12 +138,11 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
 
                     byte[] bytesHashMap = descriptografarAES((byte[]) entrada3, chaveSecretaCliente);
 
-                    // recriando HashMap
                     ConcurrentHashMap<Integer, List<String>> mapaRecebido = recriarHashMap(bytesHashMap);
 
                     if (mapaRecebido != null) {
                         System.out.println("Recebida atualização de " + idCliente + " com " + mapaRecebido.size() + " registros.");
-                        atualizarDadosGlobais(mapaRecebido);
+                        enviarDadosAoDatacenter(mapaRecebido);
                     }
 
                 }
@@ -142,7 +160,12 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
         this.isActive = false;
     }
 
-    private synchronized void atualizarDadosGlobais(ConcurrentHashMap<Integer, List<String>> mapaRecebido) {
+    private synchronized void enviarDadosAoDatacenter(ConcurrentHashMap<Integer, List<String>> mapaRecebido) {
+        if (mapaRecebido == null || mapaRecebido.isEmpty()) {
+            System.err.println("Mapa vazio");
+            return;
+        }
+
         Gson gson = new Gson();
 
         mapaRecebido.forEach((idDispositivo, lista) -> {
@@ -152,16 +175,21 @@ public class DataCenterAceitaServidoresDeBorda implements Runnable {
                 try {
                     RegistroClimatico registro = gson.fromJson(registroJson, RegistroClimatico.class);
                     novaListaRegistro.add(registro);
+
+                    List<String> listaDestino = bufferRegistros.get(idDispositivo);
+
+                    if (listaDestino == null) {
+                        bufferRegistros.putIfAbsent(idDispositivo, new CopyOnWriteArrayList<>());
+
+                        listaDestino = bufferRegistros.get(idDispositivo);
+                    }
+
+                    listaDestino.add(registroJson);
+
                 } catch (Exception e) {
                     System.err.println("Erro ao converter de String para registro: " + registroJson + " - " + e.getMessage());
                 }
             }
-
-            dadosGlobais.merge(idDispositivo, novaListaRegistro, (listaRegistro, novaLista) -> {
-                listaRegistro.addAll(novaLista);
-                return listaRegistro;
-            });
-
         });
     }
 
