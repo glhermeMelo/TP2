@@ -2,7 +2,6 @@ package servidorRMI.threads;
 
 import entities.RegistroClimatico;
 
-import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +26,7 @@ public class CalculaMaximasPorSensor implements Runnable {
             try {
                 dadosGlobais.forEach((idSensor, listaRegistros) -> {
                     if (listaRegistros != null && !listaRegistros.isEmpty()) {
+                        /*
                         calcularMaximoPorSensor(idSensor, listaRegistros, "temperatura", r -> Double.parseDouble(r.temperatura()));
                         calcularMaximoPorSensor(idSensor, listaRegistros, "umidade", r -> Double.parseDouble(r.umidade()));
                         calcularMaximoPorSensor(idSensor, listaRegistros, "co2", r -> Double.parseDouble(r.cO2()));
@@ -37,8 +37,10 @@ public class CalculaMaximasPorSensor implements Runnable {
                         calcularMaximoPorSensor(idSensor, listaRegistros, "pm10", r -> Double.parseDouble(r.pM10()));
                         calcularMaximoPorSensor(idSensor, listaRegistros, "ruido", r -> Double.parseDouble(r.ruido()));
                         calcularMaximoPorSensor(idSensor, listaRegistros, "radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
+                         */
+                        calcularMaximoPorSensor(idSensor, listaRegistros);
                     }
-                });
+                }) ;
 
                 Thread.sleep(intervaloMilis);
 
@@ -48,6 +50,88 @@ public class CalculaMaximasPorSensor implements Runnable {
             } catch (Exception e) {
                 System.err.println("Erro ao calcular máximas por sensor: " + e.getMessage());
             }
+        }
+    }
+
+    private void calcularMaximoPorSensor(Integer idSensor, List<RegistroClimatico> lista) {
+        try {
+            RegistroClimatico maxRegistroTemperatura = lista.get(0);
+            RegistroClimatico maxRegistroUmidade = lista.get(0);
+            RegistroClimatico maxRegistroCO2 = lista.get(0);
+            RegistroClimatico maxRegistroCO = lista.get(0);
+            RegistroClimatico maxRegistroNO2 = lista.get(0);
+            RegistroClimatico maxRegistroSO2 = lista.get(0);
+            RegistroClimatico maxRegistroPM2_5 =lista.get(0);
+            RegistroClimatico maxRegistroPM10 =lista.get(0);
+            RegistroClimatico maxRegistroRuido = lista.get(0);
+            RegistroClimatico maxRegistroRadiacaoUV =lista.get(0);
+
+            for (RegistroClimatico r : lista) {
+                if (Double.parseDouble(r.temperatura()) > Double.parseDouble(maxRegistroTemperatura.temperatura()))
+                    maxRegistroTemperatura = r;
+
+                if (Double.parseDouble(r.umidade()) > Double.parseDouble(maxRegistroUmidade.umidade()))
+                    maxRegistroUmidade = r;
+
+                if (Double.parseDouble(r.cO2()) > Double.parseDouble(maxRegistroCO2.cO2()))
+                    maxRegistroCO2 = r;
+
+                if (Double.parseDouble(r.cO()) > Double.parseDouble(maxRegistroCO.cO()))
+                    maxRegistroCO = r;
+
+                if (Double.parseDouble(r.nO2()) > Double.parseDouble(maxRegistroNO2.nO2()))
+                    maxRegistroNO2 = r;
+
+                if (Double.parseDouble(r.sO2()) > Double.parseDouble(maxRegistroSO2.sO2()))
+                    maxRegistroSO2 = r;
+
+                if (Double.parseDouble(r.pM2_5()) > Double.parseDouble(maxRegistroPM2_5.pM2_5()))
+                    maxRegistroPM2_5 = r;
+
+                if (Double.parseDouble(r.pM10()) > Double.parseDouble(maxRegistroPM10.pM10()))
+                    maxRegistroPM10 = r;
+
+                if (Double.parseDouble(r.ruido()) > Double.parseDouble(maxRegistroRuido.ruido()))
+                    maxRegistroRuido = r;
+
+                if (Double.parseDouble(r.radiacaoUV()) > Double.parseDouble(maxRegistroRadiacaoUV.radiacaoUV()))
+                    maxRegistroRadiacaoUV = r;
+            }
+
+            String chaveUnica = idSensor + "_";
+
+            if (maxRegistroTemperatura != null)
+                maximas.put(chaveUnica + "temperatura", maxRegistroTemperatura);
+
+            if (maxRegistroUmidade != null)
+                maximas.put(chaveUnica + "umidade", maxRegistroUmidade);
+
+            if (maxRegistroCO2 != null)
+                maximas.put(chaveUnica + "co2", maxRegistroCO2);
+
+            if (maxRegistroCO2 != null)
+                maximas.put(chaveUnica + "co", maxRegistroCO);
+
+            if (maxRegistroNO2 != null)
+                maximas.put(chaveUnica + "no2", maxRegistroNO2);
+
+            if (maxRegistroSO2 != null)
+                maximas.put(chaveUnica + "so2", maxRegistroSO2);
+
+            if (maxRegistroPM2_5 != null)
+                maximas.put(chaveUnica + "pm2_5", maxRegistroPM2_5);
+
+            if (maxRegistroPM10 != null)
+                maximas.put(chaveUnica + "pm10", maxRegistroPM10);
+
+            if (maxRegistroRuido != null)
+                maximas.put(chaveUnica + "ruido", maxRegistroRuido);
+
+            if (maxRegistroRadiacaoUV != null)
+                maximas.put(chaveUnica + "radiacaoUV", maxRegistroRadiacaoUV);
+
+        } catch (Exception e) {
+            System.err.println("Erro ao calcular máximo para sensor " + idSensor + ": " + e.getMessage());
         }
     }
 

@@ -2,7 +2,6 @@ package servidorRMI.threads;
 
 import entities.RegistroClimatico;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,7 +23,7 @@ public class CalculaMediasPorSensor implements Runnable {
     public void run() {
         while (isActive) {
             try {
-                // Itera sobre cada sensor (ID) e sua lista de registros
+                /*
                 dadosGLobais.forEach((idSensor, listaRegistros) -> {
                     if (listaRegistros != null && !listaRegistros.isEmpty()) {
                         calcularMediaPorSensor(idSensor, listaRegistros, "temperatura", r -> Double.parseDouble(r.temperatura()));
@@ -39,6 +38,13 @@ public class CalculaMediasPorSensor implements Runnable {
                         calcularMediaPorSensor(idSensor, listaRegistros, "radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
                     }
                 });
+                 */
+
+                dadosGLobais.forEach((idSensor, listaRegistros) -> {
+                    if (listaRegistros != null && !listaRegistros.isEmpty()) {
+                        calcularMediaPorSensor(idSensor, listaRegistros);
+                    }
+                });
 
                 Thread.sleep(intervaloMilis);
 
@@ -48,6 +54,60 @@ public class CalculaMediasPorSensor implements Runnable {
             } catch (Exception e) {
                 System.err.println("Erro ao calcular médias por sensor: " + e.getMessage());
             }
+        }
+    }
+
+    private void calcularMediaPorSensor(Integer idSensor, List<RegistroClimatico> lista) {
+        try {
+            double mediaTemperatura = 0;
+            double mediaUmidade = 0;
+            double mediaCO2 = 0;
+            double mediaCO = 0;
+            double mediaNO2 = 0;
+            double mediaSO2 = 0;
+            double mediaPM2_5 = 0;
+            double mediaPM10 = 0;
+            double mediaRuido = 0;
+            double mediaRadiacaoUV = 0;
+
+            for (RegistroClimatico registro : lista) {
+                if (registro != null) {
+                    mediaTemperatura += Double.parseDouble(registro.temperatura());
+                    mediaUmidade += Double.parseDouble(registro.umidade());
+                    mediaCO2 += Double.parseDouble(registro.cO2());
+                    mediaNO2 += Double.parseDouble(registro.nO2());
+                    mediaSO2 += Double.parseDouble(registro.sO2());
+                    mediaPM2_5 += Double.parseDouble(registro.pM2_5());
+                    mediaPM10 += Double.parseDouble(registro.pM10());
+                    mediaRuido += Double.parseDouble(registro.ruido());
+                    mediaRadiacaoUV += Double.parseDouble(registro.radiacaoUV());
+                }
+            }
+
+            mediaTemperatura /= lista.size();
+            mediaUmidade /= lista.size();
+            mediaCO2 /= lista.size();
+            mediaCO /= lista.size();
+            mediaNO2 /= lista.size();
+            mediaSO2 /= lista.size();
+            mediaPM2_5 /= lista.size();
+            mediaPM10 /= lista.size();
+            mediaRuido /= lista.size();
+            mediaRadiacaoUV /= lista.size();
+
+            String chaveUnica = idSensor + "_";
+            medias.put(chaveUnica + "temperatura", mediaTemperatura);
+            medias.put(chaveUnica + "umidade", mediaUmidade);
+            medias.put(chaveUnica + "co2", mediaCO2);
+            medias.put(chaveUnica + "co", mediaCO);
+            medias.put(chaveUnica + "no2", mediaNO2);
+            medias.put(chaveUnica + "so2", mediaSO2);
+            medias.put(chaveUnica + "pm2_5", mediaPM2_5);
+            medias.put(chaveUnica + "pm10", mediaPM10);
+            medias.put(chaveUnica + "ruido", mediaRuido);
+            medias.put(chaveUnica + "radiacaoUV", mediaRadiacaoUV);
+        } catch (NumberFormatException e) {
+            System.err.println("Erro ao converter valor para sensor " + idSensor + ": " + e.getMessage());
         }
     }
 

@@ -11,33 +11,12 @@ public class MicrodispositivoInvalido extends ImplMicrodispositivo {
         super(ipServidorBorda, portaMicrodispositivo, intervaloMillisGeracao, idDispositivo, portaServidorDescoberta, localizacaoMicrodispositivo);
     }
 
-    @Override
-    protected void realizarHandshakeUDP(String ipDestino, int portaServidor, ConcurrentHashMap<Integer, KeyPair> chavesServidor) {
-        super.realizarHandshakeUDP(ipDestino, portaServidor, chavesServidor);
-
-        if (!chavesServidor.containsKey(portaServidor)) {
-            return;
-        }
-
-        try {
-            // Gera um par de chaves RSA aleatório (que não pertence ao servidor real)
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(2048, new SecureRandom());
-            KeyPair chaveFalsa = kpg.generateKeyPair();
-
-            chavesServidor.put(portaServidor, chaveFalsa);
-
-        } catch (Exception e) {
-            System.err.println("Erro ao gerar chaves falsas: " + e.getMessage());
-        }
-    }
-
     public static void main(String[] args) {
         MicrodispositivoInvalido m = new MicrodispositivoInvalido(
                 "192.168.0.8",
                 5005,
                 2000,
-                "microdispositivo-invalido",
+                "185.0.0.1",
                 6000,
                 "Centro");
     }

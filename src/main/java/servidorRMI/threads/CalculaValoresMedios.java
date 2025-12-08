@@ -24,6 +24,7 @@ public class CalculaValoresMedios implements Runnable {
     public void run() {
         while (isActive) {
             try {
+                /*
                 calculaMedia("temperatura", r -> Double.parseDouble(r.temperatura()));
                 calculaMedia("umidade", r -> Double.parseDouble(r.umidade()));
                 calculaMedia("co2", r -> Double.parseDouble(r.cO2()));
@@ -34,7 +35,9 @@ public class CalculaValoresMedios implements Runnable {
                 calculaMedia("pm10", r -> Double.parseDouble(r.pM10()));
                 calculaMedia("ruido", r -> Double.parseDouble(r.ruido()));
                 calculaMedia("radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
+                 */
 
+                calculaMedia();
             } catch (Exception e) {
                 System.err.println("Erro ao calcular medias: " + e.getMessage());
             }
@@ -45,6 +48,73 @@ public class CalculaValoresMedios implements Runnable {
                 break;
             }
         }
+    }
+
+    private void calculaMedia() {
+        int registros = 0;
+        double mediaTemperatura = 0.0;
+        double mediaUmidade = 0.0;
+        double mediaCO2 = 0.0;
+        double mediaCO = 0.0;
+        double mediaNO2 = 0.0;
+        double mediaSO2 = 0.0;
+        double mediaPM2 = 0.0;
+        double mediaPM10 = 0.0;
+        double mediaRuido = 0.0;
+        double mediaRadiacaoUV = 0.0;
+
+        for (List<RegistroClimatico> lista : dadosGLobais.values()) {
+            if (lista == null)
+                continue;
+
+            for (RegistroClimatico r : lista) {
+                if (r == null)
+                    continue;
+
+                try {
+                    mediaTemperatura += Double.parseDouble(r.temperatura());
+                    mediaUmidade += Double.parseDouble(r.umidade());
+                    mediaCO2 += Double.parseDouble(r.cO2());
+                    mediaCO += Double.parseDouble(r.cO());
+                    mediaNO2 += Double.parseDouble(r.nO2());
+                    mediaSO2 += Double.parseDouble(r.sO2());
+                    mediaPM2 += Double.parseDouble(r.pM2_5());
+                    mediaPM10 += Double.parseDouble(r.pM10());
+                    mediaRuido += Double.parseDouble(r.ruido());
+                    mediaRadiacaoUV += Double.parseDouble(r.radiacaoUV());
+
+                    registros++;
+
+                } catch (NumberFormatException e) {
+                    System.err.println("Erro ao converter valores : " + e.getMessage());
+                }
+            }
+        }
+
+        if (registros == 0) {
+            medias.put("temperatura", -1.0);
+            medias.put("umidade", -1.0);
+            medias.put("co2", -1.0);
+            medias.put("co", -1.0);
+            medias.put("no2", -1.0);
+            medias.put("so2", -1.0);
+            medias.put("pm2_5", -1.0);
+            medias.put("pm10", -1.0);
+            medias.put("ruido", -1.0);
+            medias.put("radiacaoUV", -1.0);
+            return;
+        }
+
+        medias.put("temperatura", mediaTemperatura / registros);
+        medias.put("umidade", mediaUmidade / registros);
+        medias.put("co2", mediaCO2 / registros);
+        medias.put("co", mediaCO / registros);
+        medias.put("no2", mediaNO2 / registros);
+        medias.put("so2", mediaSO2 / registros);
+        medias.put("pm2_5", mediaPM2 / registros);
+        medias.put("pm10", mediaPM10 / registros);
+        medias.put("ruido", mediaRuido / registros);
+        medias.put("radiacaoUV", mediaRadiacaoUV / registros);
     }
 
     private void calculaMedia(String chave, ToDoubleFunction<RegistroClimatico> funcao) {

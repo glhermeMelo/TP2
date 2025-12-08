@@ -217,7 +217,7 @@ public class ServidorDeBorda extends ImplServidor {
     public static void main(String[] args) {
         ServidorDeBorda servidorDeBorda =
                 new ServidorDeBorda(
-                        7000,
+                        7001,
                         "192.168.0.8",
                         "Borda-1",
                         "192.168.0.8",
