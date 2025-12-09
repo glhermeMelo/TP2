@@ -36,11 +36,17 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
             // 1 - Ler IdDispositivo
             Object entrada1 = entrada.readObject();
             if (!(entrada1 instanceof String)) {
-                System.err.println("Protocolo inválido: esperado idDispositivo.");
+                System.err.println("Protocolo inválido: esperado idDispositivo ou mensagem do servidor.");
                 return;
             }
 
             String idDispositivo = (String) entrada1;
+
+            if (idDispositivo.contains("BORDA")) {
+                String[] mensagemBorda = idDispositivo.split("|");
+                localizacaoServidoresDeBorda.put(mensagemBorda[1], mensagemBorda[2]);
+                return;
+            }
 
             // 2 - Ler segundo objeto (Define se é cliente rmi ou microdispositivo)
             Object entrada2 = entrada.readObject();

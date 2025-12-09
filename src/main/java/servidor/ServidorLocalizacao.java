@@ -10,14 +10,13 @@ import java.security.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServidorLocalizacao extends ImplServidor {
-    protected ConcurrentHashMap<String, String> localizacaoServidoresDeBorda;
-    protected ConcurrentHashMap<String, String> servicosRMI;
+    private ConcurrentHashMap<String, String> localizacaoServidoresDeBorda;
+    private ConcurrentHashMap<String, String> servicosRMI;
 
     public ServidorLocalizacao(int porta, String ip, String nome,
-                               ConcurrentHashMap<String, String> localizacaoServidoresDeBorda,
                                ConcurrentHashMap<String, String> servicosRMI) {
         super(porta, ip, nome);
-        this.localizacaoServidoresDeBorda = localizacaoServidoresDeBorda;
+        this.localizacaoServidoresDeBorda = new ConcurrentHashMap<>();
         this.servicosRMI = servicosRMI;
         rodar();
     }
@@ -153,17 +152,20 @@ public class ServidorLocalizacao extends ImplServidor {
     }
 
     public static void main(String[] args) {
+        /*
         ConcurrentHashMap<String, String> localizacaoServidoresDeBorda = new ConcurrentHashMap<>();
         localizacaoServidoresDeBorda.put("Alto", "192.168.0.8:7000");
         localizacaoServidoresDeBorda.put("Centro","192.168.0.8:7000");
         localizacaoServidoresDeBorda.put("Nova Betania", "192.168.0.8:7000");
         localizacaoServidoresDeBorda.put("Vingt Rosado", "192.168.0.8:7000");
 
+
+         */
         ConcurrentHashMap<String, String> servicosRMI = new ConcurrentHashMap<>();
         servicosRMI.put("MonitoramentoClimatico", "localhost:1099");
 
         new ServidorLocalizacao(6000,
                 "192.168.0.8",
-                "ServidorLocalizacao", localizacaoServidoresDeBorda, servicosRMI);
+                "ServidorLocalizacao", servicosRMI);
     }
 }

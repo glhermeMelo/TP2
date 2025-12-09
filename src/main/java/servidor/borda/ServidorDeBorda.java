@@ -1,7 +1,8 @@
-package servidor;
+package servidor.borda;
 
 import com.google.gson.Gson;
 import entities.RegistroClimatico;
+import servidor.ImplServidor;
 import servidor.threads.EnviaRegistros;
 import servidor.threads.ServidorDeBordaAceitaMicrodispositivo;
 import servidor.util.AnalisadorDeRegistrosClimaticos;
@@ -23,19 +24,23 @@ public class ServidorDeBorda extends ImplServidor {
     private final int portaDatacenter;
     private List<String> blacklist;
     private int portaIDS;
+    private int portaServidorLocalizacao;
 
-    public ServidorDeBorda(int porta, String ip, String nome, String ipDatacenter, int portaDatacenter, int portaIDS) {
+    public ServidorDeBorda(int porta, String ip, String nome, String ipDatacenter,int portaServidorLocalizacao, int portaDatacenter, int portaIDS) {
         super(porta, ip, nome);
         mapaDeRegistrosClimaticos = new ConcurrentHashMap<>();
         this.ipDatacenter = ipDatacenter;
         this.portaDatacenter = portaDatacenter;
         blacklist = new CopyOnWriteArrayList<>();
         this.portaIDS = portaIDS;
+        this.portaServidorLocalizacao = portaServidorLocalizacao;
         rodar();
     }
 
     @Override
     protected void rodar() {
+        reportarAtivo();
+
         EnviaRegistros enviarAoDatacenter =
                 new EnviaRegistros(mapaDeRegistrosClimaticos, ipDatacenter,
                         portaDatacenter, nome, 5000);
@@ -103,6 +108,19 @@ public class ServidorDeBorda extends ImplServidor {
             }
         } catch (IOException e) {
             System.err.println("Erro na thread de gerência do seguranca.IDS: " + e.getMessage());
+        }
+    }
+
+    private void reportarAtivo() {
+        try(Socket socket = new Socket(ip, portaServidorLocalizacao)) {
+            try (ObjectOutputStream dataOutputStream = new ObjectOutputStream(socket.getOutputStream())) {
+                String mensagem = "BORDA|" + nome + "|" + ip + ":" + porta;
+                dataOutputStream.writeObject(mensagem);
+            }catch (IOException e) {
+                System.err.println("Erro ao enviar mensagem para o servidor de localizacao: " + e.getMessage());
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao contactar servidor de localizacao para declarar eligibilidade: " + e.getMessage());
         }
     }
 
@@ -242,17 +260,5 @@ public class ServidorDeBorda extends ImplServidor {
 
     public void setChavesClientes(ConcurrentHashMap<String, KeyPair> chavesClientes) {
         this.chavesClientes = chavesClientes;
-    }
-
-    public static void main(String[] args) {
-        ServidorDeBorda servidorDeBorda =
-                new ServidorDeBorda(
-                        7001,
-                        "192.168.0.8",
-                        "Borda-1",
-                        "192.168.0.8",
-                        8000,
-                        6500);
-
     }
 }

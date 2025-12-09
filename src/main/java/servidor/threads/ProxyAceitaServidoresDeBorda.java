@@ -22,14 +22,11 @@ public class ProxyAceitaServidoresDeBorda implements Runnable {
     private final String ipDatacenter;
     private final int portaDatacenter;
     private Socket socketDatacenter;
-    private ObjectOutputStream outDatacenter;
-    private ObjectInputStream inDatacenter;
 
     private boolean isActive = true;
     private ObjectInputStream entrada;
     private ObjectOutputStream saida;
 
-    //Dados do cliente
     private String idCliente;
     private SecretKey chaveSecretaCliente;
 

@@ -18,12 +18,14 @@ public abstract class ImplServidor {
     protected boolean isActive = true;
     protected ServerSocket serverSocket;
     protected ConcurrentHashMap<String, KeyPair> chavesClientes;
+    protected ConcurrentHashMap<String, KeyPair> chavesDatacenter;
 
     protected ImplServidor(int porta, String ip, String nome) {
         this.porta = porta;
         this.ip = ip;
         this.nome = nome;
         this.chavesClientes = new ConcurrentHashMap<>();
+        this.chavesDatacenter = new ConcurrentHashMap<>();
     }
 
     protected abstract void rodar();

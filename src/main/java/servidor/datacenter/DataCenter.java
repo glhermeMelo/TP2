@@ -1,5 +1,6 @@
-package servidor;
+package servidor.datacenter;
 
+import servidor.ImplServidor;
 import servidorRMI.threads.CalculaMaximasPorSensor;
 import servidorRMI.threads.CalculaMediasPorSensor;
 import servidorRMI.threads.CalculaValorMaximo;
@@ -66,7 +67,11 @@ public class DataCenter extends ImplServidor {
 
             while (isActive) {
                 Socket cliente = serverSocket.accept();
-                Thread aceitadora = new Thread(new ProxyAceitaServidoresDeBorda(cliente, chavesClientes, dadosGlobais));
+                Thread aceitadora = new Thread(new ProxyAceitaServidoresDeBorda(cliente,
+                        ip, porta,
+                        chavesClientes,
+                        chavesDatacenter));
+
                 aceitadora.start();
 
                 listaThreads.add(aceitadora);
@@ -98,12 +103,5 @@ public class DataCenter extends ImplServidor {
         } catch (RemoteException e) {
             System.err.println("Erro ao inicializar serviço remoto: " + e.getMessage());
         }
-    }
-
-    public static void main(String[] args) {
-        DataCenter dataCenter = new DataCenter(
-                9000,
-                "192.168.0.8",
-                "DT-1");
     }
 }
