@@ -1,22 +1,29 @@
 package servidor.threads;
 
+import entities.InfoServidorBorda;
+import servidor.ServidorLocalizacao;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.Socket;
 import java.security.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
     private final Socket cliente;
     protected final ConcurrentHashMap<String, KeyPair> chavesClientes;
-    protected final ConcurrentHashMap<String, String> localizacaoServidoresDeBorda;
+    protected final ConcurrentHashMap<String, List<InfoServidorBorda>> localizacaoServidoresDeBorda;
     protected final ConcurrentHashMap<String, String> servicosRMI;
 
     public ServidorDeLocalizacaoAceitaClientes(Socket cliente,
                                                ConcurrentHashMap<String, KeyPair> chavesClientes,
-                                               ConcurrentHashMap<String, String> localizacaoServidoresDeBorda,
+                                               ConcurrentHashMap<String, List<InfoServidorBorda>> localizacaoServidoresDeBorda,
                                                ConcurrentHashMap<String, String> servicosRMI) {
         this.cliente = cliente;
         this.chavesClientes = chavesClientes;
@@ -33,7 +40,6 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
             saida = new ObjectOutputStream(cliente.getOutputStream());
             saida.flush();
 
-            // 1 - Ler IdDispositivo
             Object entrada1 = entrada.readObject();
             if (!(entrada1 instanceof String)) {
                 System.err.println("Protocolo inválido: esperado idDispositivo ou mensagem do servidor.");
@@ -43,16 +49,36 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
             String idDispositivo = (String) entrada1;
 
             if (idDispositivo.contains("BORDA")) {
-                String[] mensagemBorda = idDispositivo.split("|");
-                localizacaoServidoresDeBorda.put(mensagemBorda[1], mensagemBorda[2]);
-                return;
+                String[] mensagemBorda = idDispositivo.split("\\|");
+
+                if (mensagemBorda.length >= 3) {
+                    String local = mensagemBorda[1];
+                    String ipPorta = mensagemBorda[2];
+
+                    List<InfoServidorBorda> lista = localizacaoServidoresDeBorda.get(local);
+                    if (lista == null) {
+                        localizacaoServidoresDeBorda.putIfAbsent(local, new CopyOnWriteArrayList<>());
+                        lista = localizacaoServidoresDeBorda.get(local);
+                    }
+
+                    boolean existe = false;
+                    for (InfoServidorBorda info : lista) {
+                        if (info.getEndereco().equals(ipPorta)) {
+                            existe = true;
+                            break;
+                        }
+                    }
+
+                    if (!existe) {
+                        lista.add(new InfoServidorBorda(ipPorta));
+                    }
+                    return;
+                }
             }
 
-            // 2 - Ler segundo objeto (Define se é cliente rmi ou microdispositivo)
             Object entrada2 = entrada.readObject();
 
-            // Caso ClienteRMI
-            if(entrada2 instanceof String ){
+            if (entrada2 instanceof String) {
                 String nomeServico = (String) entrada2;
 
                 System.out.println("Cliente RMI '" + idDispositivo + "' solicitando serviço: " + nomeServico);
@@ -61,22 +87,18 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
                 return;
             }
 
-            // Caso Microdispositivo
             if (entrada2 instanceof PublicKey) {
                 PublicKey chavePublicaCliente = (PublicKey) entrada2;
 
-                // Gera ou recupera chaves do servidor para este cliente
                 KeyPair chavesServidor = chavesClientes.computeIfAbsent(idDispositivo, k -> gerarParDeChavesRSA());
 
-                // Envia chave pública do servidor de volta
                 saida.writeObject(chavesServidor.getPublic());
                 saida.flush();
                 System.out.println("Troca de chaves RSA concluída com " + cliente.getInetAddress().getHostAddress() + ":" + cliente.getPort());
-                // Caso RMI
+
             } else if (entrada2 instanceof byte[]) {
                 byte[] bytesChaveSessao = (byte[]) entrada2;
 
-                // 3 - ler nonce
                 Object entrada3 = entrada.readObject();
                 if (!(entrada3 instanceof byte[])) {
                     System.err.println("Ocorreu um erro ao receber nonce");
@@ -84,7 +106,6 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
                 }
                 byte[] nonce = (byte[]) entrada3;
 
-                // 4 - Ler mensagemEncriptada
                 Object entrada4 = entrada.readObject();
                 if (!(entrada4 instanceof byte[])) {
                     System.err.println("Ocorreu um erro ao receber mensagem encriptada");
@@ -92,7 +113,6 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
                 }
                 byte[] mensagemEncriptada = (byte[]) entrada4;
 
-                // Processa a localização com os dados coletados
                 processarLocalizacao(idDispositivo, bytesChaveSessao, nonce, mensagemEncriptada, saida);
             } else {
                 System.err.println("Objeto inesperado recebido do cliente: " + entrada2.getClass().getSimpleName());
@@ -106,7 +126,8 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
         } finally {
             try {
                 if (cliente != null) cliente.close();
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+            }
         }
     }
 
@@ -119,7 +140,6 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
             return;
         }
 
-        // Decifrar chave de sessão (RSA)
         byte[] chaveSessao = descriptografarRSA(bytesChaveSessao, kpServidor.getPrivate());
         if (chaveSessao == null || chaveSessao.length != 32) {
             System.err.println("Falha ao decifrar chave de sessão.");
@@ -128,19 +148,32 @@ public class ServidorDeLocalizacaoAceitaClientes implements Runnable {
             return;
         }
 
-        // Decifrar localização (ChaCha20-Poly1305)
         String localizacao = descriptografarLocalizacao(chaveSessao, nonce, payload);
 
         String enderecoBorda = "ERRO: Localização desconhecida";
 
         if (localizacao != null) {
-            String encontrado = localizacaoServidoresDeBorda.get(localizacao);
+            List<InfoServidorBorda> lista = localizacaoServidoresDeBorda.get(localizacao);
 
-            if (encontrado == null) {
+            if (lista == null || lista.isEmpty()) {
                 System.err.println("Localização não encontrada: " + localizacao);
             } else {
-                System.out.println("Localização '" + localizacao + "' mapeada para " + encontrado);
-                enderecoBorda = encontrado;
+                List<InfoServidorBorda> ativos = new ArrayList<>();
+                for (InfoServidorBorda info : lista) {
+                    if (info.isActive()) {
+                        ativos.add(info);
+                    }
+                }
+
+                if (!ativos.isEmpty()) {
+                    int index = new Random().nextInt(ativos.size());
+                    String escolhido = ativos.get(index).getEndereco();
+                    System.out.println("Localização '" + localizacao + "' mapeada para " + escolhido);
+                    enderecoBorda = escolhido;
+                } else {
+                    System.err.println("Nenhum servidor ativo para: " + localizacao);
+                    enderecoBorda = "ERRO: Indisponivel";
+                }
             }
         }
 

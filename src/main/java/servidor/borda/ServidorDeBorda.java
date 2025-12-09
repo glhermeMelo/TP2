@@ -25,8 +25,9 @@ public class ServidorDeBorda extends ImplServidor {
     private List<String> blacklist;
     private int portaIDS;
     private int portaServidorLocalizacao;
+    private long tempoFalha;
 
-    public ServidorDeBorda(int porta, String ip, String nome, String ipDatacenter,int portaServidorLocalizacao, int portaDatacenter, int portaIDS) {
+    public ServidorDeBorda(int porta, String ip, String nome, String ipDatacenter,int portaServidorLocalizacao, int portaDatacenter, int portaIDS, long tempoFalha) {
         super(porta, ip, nome);
         mapaDeRegistrosClimaticos = new ConcurrentHashMap<>();
         this.ipDatacenter = ipDatacenter;
@@ -34,6 +35,7 @@ public class ServidorDeBorda extends ImplServidor {
         blacklist = new CopyOnWriteArrayList<>();
         this.portaIDS = portaIDS;
         this.portaServidorLocalizacao = portaServidorLocalizacao;
+        this.tempoFalha = tempoFalha;
         rodar();
     }
 
@@ -50,6 +52,32 @@ public class ServidorDeBorda extends ImplServidor {
         new Thread(this::ouvidIDS).start();
 
         new Thread(this::ouvirUDP).start();
+
+        new Thread(() -> {
+            System.err.println("Simulador de Falhas iniciado!");
+
+            abrirServerSocket();
+
+            while (isActive) {
+                try {
+                    Thread.sleep(tempoFalha);
+
+                    isActive = !isActive;
+
+                    if (isActive) {
+                        System.err.println("\n[" + nome + "] LIGANDO SERVIDOR DE BORDA");
+                        abrirServerSocket();
+                    } else {
+                        System.err.println("\n[" + nome + "] FECHANDO SERVIDOR DE BORDA");
+                        fecharServerSocket();
+                    }
+                } catch (InterruptedException e) {
+                    System.err.println("Erro ao simular falha do servidor de borda");
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }).start();
 
         try {
             serverSocket = new ServerSocket(porta);
@@ -68,8 +96,30 @@ public class ServidorDeBorda extends ImplServidor {
         }
     }
 
+    private void abrirServerSocket() {
+        try {
+            if (serverSocket == null || serverSocket.isClosed()) {
+                serverSocket = new ServerSocket(porta);
+                System.out.println(nome + " escutando TCP (Health Check) em " + ip + ":" + porta);
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao abrir ServerSocket: " + e.getMessage());
+        }
+    }
+
+    private void fecharServerSocket() {
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao fechar ServerSocket: " + e.getMessage());
+        }
+    }
+
     public void parar() {
         this.isActive = false;
+        fecharServerSocket();
     }
 
     private void ouvirUDP() {
@@ -78,7 +128,11 @@ public class ServidorDeBorda extends ImplServidor {
         try (DatagramSocket socketUDP = new DatagramSocket(porta)) {
             byte[] buffer = new byte[65535];
 
-            while (isActive) {
+            while (true) {
+                if (!isActive) {
+                    Thread.sleep(100);
+                    continue;
+                }
                 DatagramPacket pacoteUDP = new DatagramPacket(buffer, buffer.length);
                 socketUDP.receive(pacoteUDP);
 
@@ -86,6 +140,8 @@ public class ServidorDeBorda extends ImplServidor {
             }
         } catch (IOException e) {
             System.err.println("Erro ao inicializar servidor de localização na porta " + porta + ": " + e.getMessage());
+        } catch (InterruptedException e) {
+            System.err.println("Erro ao parar UDP: " + e.getMessage());
         } finally {
             System.out.println(nome + " finalizado.");
         }
@@ -94,7 +150,11 @@ public class ServidorDeBorda extends ImplServidor {
     private void ouvidIDS() {
         System.out.println(nome + " ouvindo comandos do seguranca.IDS na porta " + portaIDS);
         try (ServerSocket serverSocketAdmin = new ServerSocket(portaIDS)) {
-            while (isActive) {
+            while (true) {
+                if (!isActive) {
+                    Thread.sleep(100);
+                    continue;
+                }
                 Socket socket = serverSocketAdmin.accept();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 String comando = reader.readLine();
@@ -108,6 +168,8 @@ public class ServidorDeBorda extends ImplServidor {
             }
         } catch (IOException e) {
             System.err.println("Erro na thread de gerência do seguranca.IDS: " + e.getMessage());
+        } catch (InterruptedException e) {
+            System.err.println("Erro ao parar IDS: " + e.getMessage());
         }
     }
 

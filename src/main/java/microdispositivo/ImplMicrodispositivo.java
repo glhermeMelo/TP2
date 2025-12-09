@@ -187,6 +187,16 @@ public abstract class ImplMicrodispositivo {
                     String endereco = (String) resposta;
                     if (endereco.startsWith("ERRO")) {
                         System.err.println("Servidor retornou erro: " + endereco);
+                        realizarHandshakeUDP(this.ip, portaServidorLocalizacao, chavesServidorLocalizacao);
+
+                        criptografarLocalizacao();
+
+                        if (portaServidorDeBorda <= 0 || this.enderecoBorda == null) {
+                            System.err.println("Dados do servidor de borda inválidos! Abortando.");
+                            return;
+                        }
+
+                        realizarHandshakeUDP(this.enderecoBorda, portaServidorDeBorda, chavesServidorDeBorda);
                         return;
                     }
                     String[] partes = endereco.split(":");
@@ -198,7 +208,6 @@ public abstract class ImplMicrodispositivo {
                 }
             } catch (SocketTimeoutException e) {
                 System.err.println("ERRO: O servidor não respondeu a tempo (Timeout).");
-                System.err.println("Verifique se o ServidorLocalizacao está rodando e se não houve erro no console dele.");
             }
         } catch (NoSuchAlgorithmException e) {
             System.err.println("Erro: algoritmo criptográfico não disponível: " + e.getMessage());

@@ -1,5 +1,6 @@
 package servidor;
 
+import entities.InfoServidorBorda;
 import servidor.threads.ServidorDeLocalizacaoAceitaClientes;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -7,10 +8,13 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.*;
 import java.security.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServidorLocalizacao extends ImplServidor {
-    private ConcurrentHashMap<String, String> localizacaoServidoresDeBorda;
+    private ConcurrentHashMap<String, List<InfoServidorBorda>> localizacaoServidoresDeBorda;
+    private ConcurrentHashMap<String, Integer> contadoresRoundRobin;
     private ConcurrentHashMap<String, String> servicosRMI;
 
     public ServidorLocalizacao(int porta, String ip, String nome,
@@ -28,6 +32,84 @@ public class ServidorLocalizacao extends ImplServidor {
         new Thread(this::ouvirTCP).start();
 
         new Thread(this::ouvirUDP).start();
+
+        new Thread(this::monitorarBordas).start();
+    }
+
+    private void monitorarBordas() {
+        System.out.println("Iniciando monitoramento dos servidores de borda");
+
+        while (isActive) {
+            try {
+                localizacaoServidoresDeBorda.forEach((local, lista) -> {
+                    for (InfoServidorBorda infoServidorBorda : lista) {
+                        boolean estadoInicial = infoServidorBorda.isActive();
+                        boolean testarServidor = testarConexao(infoServidorBorda.getEndereco());
+
+                        infoServidorBorda.setActive(testarServidor);
+
+                        if (estadoInicial != testarServidor) {
+                            System.out.println("[MONITOR] Servidor " + local + " (" + infoServidorBorda.getEndereco() + ") mudou status para: " + (testarServidor ? "ONLINE" : "OFFLINE"));
+                        }
+                    }
+                });
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                System.err.println("Erro no monitoramento: " + e.getMessage());
+            }
+        }
+    }
+
+    private boolean testarConexao(String endereco) {
+        String[] partes = endereco.split(":");
+        if (partes.length != 2)
+            return false;
+
+        String ip = partes[0];
+        int porta = Integer.parseInt(partes[1]);
+
+        try (Socket socket = new Socket()) {
+
+            socket.connect(new InetSocketAddress(ip, porta), 2000);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private synchronized String pegarRoundRobin(String endereco) {
+        List<InfoServidorBorda> lista = localizacaoServidoresDeBorda.get(endereco);
+
+        if (lista == null || lista.isEmpty()) {
+            return null;
+        }
+
+        List<InfoServidorBorda> ativos = new ArrayList<>();
+
+        for (InfoServidorBorda infoServidorBorda : lista) {
+            if (infoServidorBorda.isActive()) {
+                ativos.add(infoServidorBorda);
+            }
+        }
+
+        if (ativos.isEmpty()) {
+            return null;
+        }
+
+        int indice = contadoresRoundRobin.getOrDefault(endereco, 0);
+
+        if (indice >= ativos.size()) {
+            indice = 0;
+        }
+
+        String escolhido = ativos.get(indice).getEndereco();
+
+        contadoresRoundRobin.put(escolhido, (indice + 1) % ativos.size());
+
+        return escolhido;
     }
 
     private void ouvirTCP() {
@@ -57,7 +139,6 @@ public class ServidorLocalizacao extends ImplServidor {
                 DatagramPacket pacote = new DatagramPacket(buffer, buffer.length);
                 socketUDP.receive(pacote);
 
-                // Processa cada pacote em uma nova thread para não bloquear o loop
                 new Thread(() -> processarPacoteUDP(socketUDP, pacote)).start();
             }
         } catch (IOException e) {
@@ -76,13 +157,13 @@ public class ServidorLocalizacao extends ImplServidor {
 
             Object entrada2 = ois.readObject();
 
-            // === CASO 1: Handshake ===
+            //Handshake ===
             if (entrada2 instanceof PublicKey) {
                 System.out.println("UDP: Handshake solicitado por " + idDispositivo);
                 KeyPair chaves = chavesClientes.computeIfAbsent(idDispositivo, k -> gerarParDeChavesRSA());
                 responderUDP(socket, pacote, chaves.getPublic());
 
-                // === CASO 2: Mensagem cifrada com localizacao ===
+                //Mensagem cifrada com localizacao
             } else if (entrada2 instanceof byte[]) {
                 System.out.println("UDP: Localização recebida de " + idDispositivo);
                 byte[] sessaoEnc = (byte[]) entrada2;
@@ -90,7 +171,6 @@ public class ServidorLocalizacao extends ImplServidor {
                 byte[] nonce = (byte[]) ois.readObject();
                 byte[] payloadEnc = (byte[]) ois.readObject();
 
-                // Decifra e obtém o endereço IP:Porta
                 String enderecoBorda = decifrarEObterEndereco(idDispositivo, sessaoEnc, nonce, payloadEnc);
 
                 responderUDP(socket, pacote, enderecoBorda);
@@ -120,8 +200,8 @@ public class ServidorLocalizacao extends ImplServidor {
             chacha.init(Cipher.DECRYPT_MODE, new SecretKeySpec(chaveSessao, "ChaCha20"), new IvParameterSpec(nonce));
             String localizacao = new String(chacha.doFinal(payloadEnc));
 
-            // Busca no mapa
-            String endereco = localizacaoServidoresDeBorda.get(localizacao);
+            String endereco = pegarRoundRobin(localizacao);
+
             if (endereco == null) {
                 System.err.println("Localização '" + localizacao + "' não cadastrada.");
                 return "ERRO: Localização desconhecida";
