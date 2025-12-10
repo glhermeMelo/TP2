@@ -10,9 +10,21 @@ public class Firewall {
         whitelist.add("192.0.0");
         whitelist.add("10.0.0");
 
-        FirewallBorda fb = new FirewallBorda(
-                7000,
+        FirewallBorda fb1 = new FirewallBorda(
+                7500,
                 7001,
+                "localhost",
+                whitelist);
+
+        FirewallBorda fb2 = new FirewallBorda(
+                7501,
+                7002,
+                "localhost",
+                whitelist);
+
+        FirewallBorda fb3 = new FirewallBorda(
+                7502,
+                7003,
                 "localhost",
                 whitelist);
 
@@ -22,7 +34,10 @@ public class Firewall {
                 "localhost",
                 whitelist);
 
-        new Thread(fb).start();
+        new Thread(fb1).start();
+        new Thread(fb2).start();
+        new Thread(fb3).start();
+
         new Thread(fl).start();
     }
 }

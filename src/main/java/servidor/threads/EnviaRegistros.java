@@ -69,6 +69,8 @@ public class EnviaRegistros implements Runnable {
                     if (byesHashMapCifrado != null) {
                         saida.writeObject(byesHashMapCifrado);
                         saida.flush();
+
+                        mapaDeRegistrosClimaticos.clear();
                         System.out.println(nomeServidorDeBorda + " enviando HashMap ao Datacenter " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
                     }
                 }

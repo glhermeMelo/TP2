@@ -232,19 +232,10 @@ public class ServidorLocalizacao extends ImplServidor {
     }
 
     public static void main(String[] args) {
-        /*
-        ConcurrentHashMap<String, String> localizacaoServidoresDeBorda = new ConcurrentHashMap<>();
-        localizacaoServidoresDeBorda.put("Alto", "192.168.0.8:7000");
-        localizacaoServidoresDeBorda.put("Centro","192.168.0.8:7000");
-        localizacaoServidoresDeBorda.put("Nova Betania", "192.168.0.8:7000");
-        localizacaoServidoresDeBorda.put("Vingt Rosado", "192.168.0.8:7000");
-
-
-         */
         ConcurrentHashMap<String, String> servicosRMI = new ConcurrentHashMap<>();
         servicosRMI.put("MonitoramentoClimatico", "localhost:1099");
 
-        new ServidorLocalizacao(6000,
+        new ServidorLocalizacao(6001,
                 "192.168.0.8",
                 "ServidorLocalizacao", servicosRMI);
     }

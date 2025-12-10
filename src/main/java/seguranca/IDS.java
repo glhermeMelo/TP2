@@ -7,22 +7,24 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class IDS {
     private int porta;
     private String ip;
-    private int borda;
+    private List<Integer> portasBorda;
     private boolean isActive = true;
 
-    public IDS(int porta, String ip, int borda) {
+    public IDS(int porta, String ip, List<Integer> portasBorda) {
         this.porta = porta;
         this.ip = ip;
-        this.borda = borda;
+        this.portasBorda = portasBorda;
         rodar();
     }
 
     public void rodar() {
-        System.out.println("seguranca.IDS iniciado. Monitorizando alertas na porta " + porta);
+        System.out.println("IDS iniciado. Monitorizando alertas na porta " + porta);
 
         try (ServerSocket serverSocket = new ServerSocket(porta)) {
             while (isActive) {
@@ -30,7 +32,7 @@ public class IDS {
                 new Thread(() -> processarAlerta(socket)).start();
             }
         } catch (IOException e) {
-            System.err.println("Erro no seguranca.IDS: " + e.getMessage());
+            System.err.println("Erro no IDS: " + e.getMessage());
         }
     }
 
@@ -54,20 +56,23 @@ public class IDS {
     }
 
     private void registrarIntrusao(String log) {
-        System.out.println("\n[seguranca.IDS] DETECÇÃO DE INTRUSÃO/ANOMALIA: " + LocalDateTime.now());
+        System.out.println("\nDETECÇÃO DE INTRUSÃO/ANOMALIA: " + LocalDateTime.now());
         System.out.println("      Detalhes: " + log);
     }
 
     private void enviarComandoBloqueio(String idDispositivo) {
-        System.out.println("[seguranca.IDS] Iniciando protocolo de contenção para: " + idDispositivo);
-        try (Socket socketBorda = new Socket(ip, borda);
-             PrintWriter writer = new PrintWriter(socketBorda.getOutputStream(), true)) {
+        System.out.println("Iniciando protocolo de contenção para: " + idDispositivo);
 
-            writer.println("BLOQUEAR:" + idDispositivo);
-            System.out.println("[seguranca.IDS] Comando de bloqueio enviado ao Servidor de Borda com sucesso.");
+        for (Integer porta : portasBorda) {
+            try (Socket socketBorda = new Socket(ip, porta);
+                 PrintWriter writer = new PrintWriter(socketBorda.getOutputStream(), true)) {
 
-        } catch (IOException e) {
-            System.err.println("[seguranca.IDS] FALHA ao contactar Servidor de Borda: " + e.getMessage());
+                writer.println("BLOQUEAR:" + idDispositivo);
+                System.out.println("Comando de bloqueio enviado ao Servidor de Borda com sucesso.");
+
+            } catch (IOException e) {
+                System.err.println("FALHA ao contactar Servidor de Borda: " + e.getMessage());
+            }
         }
     }
 
@@ -80,6 +85,12 @@ public class IDS {
     }
 
     public static void main(String[] args) {
-        IDS ids = new IDS(6500, "localhost", 7002);
+        List<Integer> portasAdmin = new ArrayList<>();
+        portasAdmin.add(6601);
+        portasAdmin.add(6602);
+        portasAdmin.add(6603);
+
+        // IDS escuta na 6500 (Alertas) e manda comandos para 6601-6603
+        IDS ids = new IDS(6500, "localhost", portasAdmin);
     }
 }

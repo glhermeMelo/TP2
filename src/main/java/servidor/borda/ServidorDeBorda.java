@@ -26,8 +26,10 @@ public class ServidorDeBorda extends ImplServidor {
     private int portaIDS;
     private int portaServidorLocalizacao;
     private long tempoFalha;
+    private int portaPublica;
 
-    public ServidorDeBorda(int porta, String ip, String nome, String ipDatacenter,int portaServidorLocalizacao, int portaDatacenter, int portaIDS, long tempoFalha) {
+    public ServidorDeBorda(int porta, String ip, String nome, String ipDatacenter,int portaServidorLocalizacao, int portaDatacenter, int portaIDS,
+                           long tempoFalha, int portaPublica) {
         super(porta, ip, nome);
         mapaDeRegistrosClimaticos = new ConcurrentHashMap<>();
         this.ipDatacenter = ipDatacenter;
@@ -36,6 +38,7 @@ public class ServidorDeBorda extends ImplServidor {
         this.portaIDS = portaIDS;
         this.portaServidorLocalizacao = portaServidorLocalizacao;
         this.tempoFalha = tempoFalha;
+        this.portaPublica = portaPublica;
         rodar();
     }
 
@@ -176,7 +179,7 @@ public class ServidorDeBorda extends ImplServidor {
     private void reportarAtivo() {
         try(Socket socket = new Socket(ip, portaServidorLocalizacao)) {
             try (ObjectOutputStream dataOutputStream = new ObjectOutputStream(socket.getOutputStream())) {
-                String mensagem = "BORDA|" + nome + "|" + ip + ":" + porta;
+                String mensagem = "BORDA|" + nome + "|" + ip + ":" + portaPublica;
                 dataOutputStream.writeObject(mensagem);
             }catch (IOException e) {
                 System.err.println("Erro ao enviar mensagem para o servidor de localizacao: " + e.getMessage());
