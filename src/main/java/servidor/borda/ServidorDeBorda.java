@@ -81,22 +81,6 @@ public class ServidorDeBorda extends ImplServidor {
                 }
             }
         }).start();
-
-        try {
-            serverSocket = new ServerSocket(porta);
-            System.out.println(nome + " escutando em " + ip + ":" + porta);
-        } catch (IOException e) {
-            System.err.println("Erro ao inicializar servidor de localização na porta " + porta + ": " + e.getMessage());
-        } finally {
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                try {
-                    serverSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println(nome + " finalizado.");
-        }
     }
 
     private void abrirServerSocket() {
@@ -151,7 +135,7 @@ public class ServidorDeBorda extends ImplServidor {
     }
 
     private void ouvidIDS() {
-        System.out.println(nome + " ouvindo comandos do seguranca.IDS na porta " + portaIDS);
+        System.out.println(nome + " ouvindo comandos do IDS na porta " + portaIDS);
         try (ServerSocket serverSocketAdmin = new ServerSocket(portaIDS)) {
             while (true) {
                 if (!isActive) {
@@ -170,7 +154,7 @@ public class ServidorDeBorda extends ImplServidor {
                 socket.close();
             }
         } catch (IOException e) {
-            System.err.println("Erro na thread de gerência do seguranca.IDS: " + e.getMessage());
+            System.err.println("Erro na thread de gerência do IDS: " + e.getMessage());
         } catch (InterruptedException e) {
             System.err.println("Erro ao parar IDS: " + e.getMessage());
         }

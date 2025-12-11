@@ -65,7 +65,7 @@ public  class AnalisadorDeRegistrosClimaticos {
                 writer.println(payload);
 
             } catch (IOException e) {
-            System.err.println("Erro ao notificar seguranca.IDS: " + e.getMessage());
+            System.err.println("Erro ao notificar IDS: " + e.getMessage());
         }
     }
 }

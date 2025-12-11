@@ -1,5 +1,3 @@
-package seguranca;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -56,7 +54,7 @@ public class IDS {
     }
 
     private void registrarIntrusao(String log) {
-        System.out.println("\nDETECÇÃO DE INTRUSÃO/ANOMALIA: " + LocalDateTime.now());
+        System.out.println("\nANOMALIA: " + LocalDateTime.now());
         System.out.println("      Detalhes: " + log);
     }
 
@@ -90,7 +88,6 @@ public class IDS {
         portasAdmin.add(6602);
         portasAdmin.add(6603);
 
-        // IDS escuta na 6500 (Alertas) e manda comandos para 6601-6603
         IDS ids = new IDS(6500, "localhost", portasAdmin);
     }
 }

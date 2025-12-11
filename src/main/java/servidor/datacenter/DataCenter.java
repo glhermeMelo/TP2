@@ -89,10 +89,10 @@ public class DataCenter extends ImplServidor {
 
         SpringApplication app = new SpringApplication(MonitoramentoController.class);
         // Define a porta dinamicamente
-        app.setDefaultProperties(Collections.singletonMap("server.port", String.valueOf(httpPort)));
+        app.setDefaultProperties(Collections.singletonMap("server.port", String.valueOf(portaHTTP)));
         app.run();
 
-        System.out.println("Servidor HTTP Spring Boot inicializado na porta " + httpPort + "!");
+        System.out.println("Servidor HTTP Spring Boot inicializado na porta " + portaHTTP + "!");
     }
 
     public static ImplMonitoramentoClimatico getServicoMonitoramento() {
