@@ -57,10 +57,9 @@ public abstract class ImplMicrodispositivo {
 
         if (portaServidorDeBorda <= 0 || this.enderecoBorda == null) {
             System.err.println("Dados do servidor de borda inválidos! Abortando.");
-            return;
+        } else {
+            realizarHandshakeUDP(this.enderecoBorda, portaServidorDeBorda, chavesServidorDeBorda);
         }
-
-        realizarHandshakeUDP(this.enderecoBorda, portaServidorDeBorda, chavesServidorDeBorda);
 
         if (threadGeradora == null || !threadGeradora.isAlive()) {
             threadGeradora = new Thread(geradorDeLeituras);
@@ -175,16 +174,15 @@ public abstract class ImplMicrodispositivo {
                     String endereco = (String) resposta;
                     if (endereco.startsWith("ERRO")) {
                         System.err.println("Servidor retornou erro: " + endereco);
-                        realizarHandshakeUDP(this.ip, portaServidorLocalizacao, chavesServidorLocalizacao);
 
-                        criptografarLocalizacao();
-
-                        if (portaServidorDeBorda <= 0 || this.enderecoBorda == null) {
-                            System.err.println("Dados do servidor de borda inválidos! Abortando.");
-                            return;
+                        // Se erro de chave, tenta handshake novamente
+                        if(endereco.contains("Chave")) {
+                            realizarHandshakeUDP(this.ip, portaServidorLocalizacao, chavesServidorLocalizacao);
                         }
 
-                        realizarHandshakeUDP(this.enderecoBorda, portaServidorDeBorda, chavesServidorDeBorda);
+                        // Limpa o endereço de borda para não tentar enviar para servidor inválido
+                        this.enderecoBorda = null;
+                        this.portaServidorDeBorda = 0;
                         return;
                     }
                     String[] partes = endereco.split(":");
