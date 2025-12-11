@@ -1,26 +1,22 @@
 package servidor.datacenter;
 
+import org.springframework.boot.SpringApplication;
 import servidor.ImplServidor;
+import servidor.threads.ProxyAceitaServidoresDeBorda;
+import servidorRMI.ImplMonitoramentoClimatico;
 import servidorRMI.threads.CalculaMaximasPorSensor;
 import servidorRMI.threads.CalculaMediasPorSensor;
 import servidorRMI.threads.CalculaValorMaximo;
 import servidorRMI.threads.CalculaValoresMedios;
-import entities.RegistroClimatico;
-import servidor.threads.ProxyAceitaServidoresDeBorda;
-import servidorRMI.IMonitoramentoRMI;
-import servidorRMI.ImplMonitoramentoClimatico;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.rmi.AccessException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import entities.RegistroClimatico;
 
 public class DataCenter extends ImplServidor {
     private ConcurrentHashMap<Integer, List<RegistroClimatico>> dadosGlobais;
@@ -29,9 +25,13 @@ public class DataCenter extends ImplServidor {
     private CalculaValoresMedios threadMedios;
     private CalculaMaximasPorSensor threadMaximasPorSensor;
     private CalculaMediasPorSensor threadMediasPorSensor;
+    private int portaHTTP;
 
-    public DataCenter(int porta, String ip, String nome) {
+    private static ImplMonitoramentoClimatico servicoMonitoramento;
+
+    public DataCenter(int porta, String ip, String nome, int portaHTTP) {
         super(porta, ip, nome);
+        this.portaHTTP = portaHTTP;
         dadosGlobais = new ConcurrentHashMap<>();
         listaThreads = new ArrayList<>();
         this.threadMaximos = new CalculaValorMaximo(dadosGlobais, 5000);
@@ -63,7 +63,7 @@ public class DataCenter extends ImplServidor {
             listaThreads.add(calculadoraMaximoSensor);
             listaThreads.add(calculadoraMediosSensor);
 
-            implementarRMI();
+            implementarHTTP();
 
             while (isActive) {
                 Socket cliente = serverSocket.accept();
@@ -83,25 +83,19 @@ public class DataCenter extends ImplServidor {
         }
     }
 
-    private void implementarRMI() {
-        try {
-            ImplMonitoramentoClimatico refObjRemoto = new ImplMonitoramentoClimatico(threadMedios,
-                    threadMaximos, threadMediasPorSensor, threadMaximasPorSensor);
+    private void implementarHTTP() {
+        servicoMonitoramento = new ImplMonitoramentoClimatico(threadMedios,
+                threadMaximos, threadMediasPorSensor, threadMaximasPorSensor);
 
-            IMonitoramentoRMI stub = (IMonitoramentoRMI) UnicastRemoteObject
-                    .exportObject(refObjRemoto, 0);
+        SpringApplication app = new SpringApplication(MonitoramentoController.class);
+        // Define a porta dinamicamente
+        app.setDefaultProperties(Collections.singletonMap("server.port", String.valueOf(httpPort)));
+        app.run();
 
-            LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
+        System.out.println("Servidor HTTP Spring Boot inicializado na porta " + httpPort + "!");
+    }
 
-            Registry monitoramentoClimatico = LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
-
-            monitoramentoClimatico.rebind("MonitoramentoClimatico", refObjRemoto);
-
-            System.err.println("MonitoramentoClimatico inicializado com sucesso!");
-        } catch (AccessException e) {
-            System.err.println("Erro ao acessar o registro remoto: " + e.getMessage());
-        } catch (RemoteException e) {
-            System.err.println("Erro ao inicializar serviço remoto: " + e.getMessage());
-        }
+    public static ImplMonitoramentoClimatico getServicoMonitoramento() {
+        return servicoMonitoramento;
     }
 }

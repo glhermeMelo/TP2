@@ -5,38 +5,38 @@ import entities.RegistroClimatico;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-public interface IMonitoramentoRMI extends Remote {
-    RegistroClimatico getTemperaturaMaxima() throws RemoteException;
-    RegistroClimatico getCO2Maximo() throws RemoteException;
-    RegistroClimatico getCOMaximo() throws RemoteException;
-    RegistroClimatico getNO2Maximo() throws RemoteException;
-    RegistroClimatico getSO2Maximo() throws RemoteException;
-    RegistroClimatico getPM2_5Maximo()  throws RemoteException;
-    RegistroClimatico getPM10Maximo() throws RemoteException;
-    RegistroClimatico getUmidadeMaxima() throws RemoteException;
-    RegistroClimatico getRuidoMaximo() throws RemoteException;
-    RegistroClimatico getRadiacaoUVMaxima() throws RemoteException;
+public interface IMonitoramentoRMI {
+    RegistroClimatico getTemperaturaMaxima() ;
+    RegistroClimatico getCO2Maximo() ;
+    RegistroClimatico getCOMaximo() ;
+    RegistroClimatico getNO2Maximo() ;
+    RegistroClimatico getSO2Maximo() ;
+    RegistroClimatico getPM2_5Maximo()  ;
+    RegistroClimatico getPM10Maximo() ;
+    RegistroClimatico getUmidadeMaxima() ;
+    RegistroClimatico getRuidoMaximo() ;
+    RegistroClimatico getRadiacaoUVMaxima() ;
 
-    Double getTemperaturaMedia() throws RemoteException;
-    Double getCO2Medio() throws RemoteException;
-    Double getCOMedio() throws RemoteException;
-    Double getNO2Medio() throws RemoteException;
-    Double getSO2Medio() throws RemoteException;
-    Double getPM2_5Medio()  throws RemoteException;
-    Double getPM10Medio() throws RemoteException;
-    Double getUmidadeMedia() throws RemoteException;
-    Double getRuidoMedio() throws RemoteException;
-    Double getRadiacaoUVMedia() throws RemoteException;
+    Double getTemperaturaMedia() ;
+    Double getCO2Medio() ;
+    Double getCOMedio() ;
+    Double getNO2Medio() ;
+    Double getSO2Medio() ;
+    Double getPM2_5Medio()  ;
+    Double getPM10Medio() ;
+    Double getUmidadeMedia() ;
+    Double getRuidoMedio() ;
+    Double getRadiacaoUVMedia() ;
 
-    Double getTemperaturaMediaPorSensor(int idSensor) throws RemoteException;
-    Double getCO2MedioPorSensor(int idSensor) throws RemoteException;
-    Double getCOMedioPorSensor(int idSensor) throws RemoteException;
-    Double getNO2MedioPorSensor(int idSensor) throws RemoteException;
-    Double getSO2MedioPorSensor(int idSensor) throws RemoteException;
-    Double getPM2_5MedioPorSensor(int idSensor)  throws RemoteException;
-    Double getPM10MedioPorSensor(int idSensor) throws RemoteException;
-    Double getUmidadeMediaPorSensor(int idSensor) throws RemoteException;
-    Double getRuidoMedioPorSensor(int idSensor) throws RemoteException;
-    Double getRadiacaoUVMediaPorSensor(int idSensor) throws RemoteException;
+    Double getTemperaturaMediaPorSensor(int idSensor) ;
+    Double getCO2MedioPorSensor(int idSensor) ;
+    Double getCOMedioPorSensor(int idSensor) ;
+    Double getNO2MedioPorSensor(int idSensor) ;
+    Double getSO2MedioPorSensor(int idSensor) ;
+    Double getPM2_5MedioPorSensor(int idSensor)  ;
+    Double getPM10MedioPorSensor(int idSensor) ;
+    Double getUmidadeMediaPorSensor(int idSensor) ;
+    Double getRuidoMedioPorSensor(int idSensor) ;
+    Double getRadiacaoUVMediaPorSensor(int idSensor) ;
 
 }

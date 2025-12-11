@@ -13,25 +13,25 @@ public class Firewall {
         FirewallBorda fb1 = new FirewallBorda(
                 7500,
                 7001,
-                "localhost",
+                "192.168.0.7",
                 whitelist);
 
         FirewallBorda fb2 = new FirewallBorda(
                 7501,
                 7002,
-                "localhost",
+                "192.168.0.7",
                 whitelist);
 
         FirewallBorda fb3 = new FirewallBorda(
                 7502,
                 7003,
-                "localhost",
+                "192.168.0.7",
                 whitelist);
 
         FirewallLocalizacao fl = new FirewallLocalizacao(
                 6000,
                 6001,
-                "localhost",
+                "192.168.0.7",
                 whitelist);
 
         new Thread(fb1).start();

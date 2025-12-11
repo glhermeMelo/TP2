@@ -19,7 +19,7 @@ public  class AnalisadorDeRegistrosClimaticos {
     private static final Double MAXIMORUIDO = 60D;
     private static final Double MAXIMORADIACAOUV = 5D;
 
-    private static final String IP_IDS = "localhost";
+    private static final String IP_IDS = "192.168.0.7";
     private static final int PORTA_IDS = 6500;
 
     public static void analisarRegistroClimatico(RegistroClimatico registroClimatico) {

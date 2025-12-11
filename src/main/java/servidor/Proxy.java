@@ -53,9 +53,9 @@ public class Proxy extends ImplServidor {
     public static void main(String[] args) {
         Proxy proxy = new Proxy(
                 8000,
-                "localhost",
+                "192.168.0.7",
                 "Proxy",
                 9000,
-                "localhost");
+                "192.168.0.7");
     }
 }

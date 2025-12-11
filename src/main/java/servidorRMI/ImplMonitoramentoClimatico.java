@@ -26,156 +26,156 @@ public class ImplMonitoramentoClimatico implements IMonitoramentoRMI {
 
     // =================== Valores Globais ===================
     @Override
-    public RegistroClimatico getTemperaturaMaxima() throws RemoteException {
+    public RegistroClimatico getTemperaturaMaxima() {
         return calculaValorMaximo.getTemperaturaMaxima();
     }
 
     @Override
-    public RegistroClimatico getCO2Maximo() throws RemoteException {
+    public RegistroClimatico getCO2Maximo() {
         return calculaValorMaximo.getCO2Maximo();
     }
 
     @Override
-    public RegistroClimatico getCOMaximo() throws RemoteException {
+    public RegistroClimatico getCOMaximo() {
         return calculaValorMaximo.getCOMaximo();
     }
 
     @Override
-    public RegistroClimatico getNO2Maximo() throws RemoteException {
+    public RegistroClimatico getNO2Maximo() {
         return calculaValorMaximo.getNO2Maximo();
     }
 
     @Override
-    public RegistroClimatico getSO2Maximo() throws RemoteException {
+    public RegistroClimatico getSO2Maximo() {
         return calculaValorMaximo.getSO2Maximo();
     }
 
     @Override
-    public RegistroClimatico getPM2_5Maximo() throws RemoteException {
+    public RegistroClimatico getPM2_5Maximo() {
         return calculaValorMaximo.getPM2_5Maximo();
     }
 
     @Override
-    public RegistroClimatico getPM10Maximo() throws RemoteException {
+    public RegistroClimatico getPM10Maximo() {
         return calculaValorMaximo.getPM10Maximo();
     }
 
     @Override
-    public RegistroClimatico getUmidadeMaxima() throws RemoteException {
+    public RegistroClimatico getUmidadeMaxima() {
         return calculaValorMaximo.getUmidadeMaxima();
     }
 
     @Override
-    public RegistroClimatico getRuidoMaximo() throws RemoteException {
+    public RegistroClimatico getRuidoMaximo() {
         return calculaValorMaximo.getRuidoMaximo();
     }
 
     @Override
-    public RegistroClimatico getRadiacaoUVMaxima() throws RemoteException {
+    public RegistroClimatico getRadiacaoUVMaxima() {
         return calculaValorMaximo.getRadiacaoUVMaximo();
     }
 
     // =================== Valores Globais ===================
 
     @Override
-    public Double getTemperaturaMedia() throws RemoteException {
+    public Double getTemperaturaMedia() {
         return calculaValoresMedios.getTemperaturaMedia();
     }
 
     @Override
-    public Double getCO2Medio() throws RemoteException {
+    public Double getCO2Medio() {
         return calculaValoresMedios.getCO2Medio();
     }
 
     @Override
-    public Double getCOMedio() throws RemoteException {
+    public Double getCOMedio() {
         return calculaValoresMedios.getCOMedio();
     }
 
     @Override
-    public Double getNO2Medio() throws RemoteException {
+    public Double getNO2Medio() {
         return calculaValoresMedios.getNO2Medio();
     }
 
     @Override
-    public Double getSO2Medio() throws RemoteException {
+    public Double getSO2Medio() {
         return calculaValoresMedios.getSO2Medio();
     }
 
     @Override
-    public Double getPM2_5Medio() throws RemoteException {
+    public Double getPM2_5Medio() {
         return calculaValoresMedios.getPM2_5Medio();
     }
 
     @Override
-    public Double getPM10Medio() throws RemoteException {
+    public Double getPM10Medio() {
         return calculaValoresMedios.getPM10Medio();
     }
 
     @Override
-    public Double getUmidadeMedia() throws RemoteException {
+    public Double getUmidadeMedia() {
         return calculaValoresMedios.getUmidadeMedia();
     }
 
     @Override
-    public Double getRuidoMedio() throws RemoteException {
+    public Double getRuidoMedio() {
         return calculaValoresMedios.getRuidoMedio();
     }
 
     @Override
-    public Double getRadiacaoUVMedia() throws RemoteException {
+    public Double getRadiacaoUVMedia() {
         return calculaValoresMedios.getRadiacaoUVMedio();
     }
 
     // =================== Valores Individuais ===================
 
     @Override
-    public Double getTemperaturaMediaPorSensor(int idSensor) throws RemoteException {
+    public Double getTemperaturaMediaPorSensor(int idSensor) {
         return calculaMediasPorSensor.getTemperaturaMedia(idSensor);
     }
 
     @Override
-    public Double getCO2MedioPorSensor(int idSensor) throws RemoteException {
+    public Double getCO2MedioPorSensor(int idSensor) {
         return calculaMediasPorSensor.getCO2Medio(idSensor);
     }
 
     @Override
-    public Double getCOMedioPorSensor(int idSensor) throws RemoteException {
+    public Double getCOMedioPorSensor(int idSensor) {
         return calculaMediasPorSensor.getCOMedio(idSensor);
     }
 
     @Override
-    public Double getNO2MedioPorSensor(int idSensor) throws RemoteException {
+    public Double getNO2MedioPorSensor(int idSensor) {
         return calculaMediasPorSensor.getNO2Medio(idSensor);
     }
 
     @Override
-    public Double getSO2MedioPorSensor(int idSensor) throws RemoteException {
+    public Double getSO2MedioPorSensor(int idSensor) {
         return calculaMediasPorSensor.getSO2Medio(idSensor);
     }
 
     @Override
-    public Double getPM2_5MedioPorSensor(int idSensor) throws RemoteException {
+    public Double getPM2_5MedioPorSensor(int idSensor) {
         return calculaMediasPorSensor.getPM2_5Medio(idSensor);
     }
 
     @Override
-    public Double getPM10MedioPorSensor(int idSensor) throws RemoteException {
+    public Double getPM10MedioPorSensor(int idSensor) {
         return calculaMediasPorSensor.getPM10Medio(idSensor);
     }
 
     @Override
-    public Double getUmidadeMediaPorSensor(int idSensor) throws RemoteException {
+    public Double getUmidadeMediaPorSensor(int idSensor) {
         return calculaMediasPorSensor.getUmidadeMedia(idSensor);
     }
 
     @Override
-    public Double getRuidoMedioPorSensor(int idSensor) throws RemoteException {
+    public Double getRuidoMedioPorSensor(int idSensor) {
         return calculaMediasPorSensor.getRuidoMedio(idSensor);
     }
 
     @Override
-    public Double getRadiacaoUVMediaPorSensor(int idSensor) throws RemoteException {
+    public Double getRadiacaoUVMediaPorSensor(int idSensor) {
         return calculaMediasPorSensor.getRadiacaoUVMedia(idSensor);
     }
 }

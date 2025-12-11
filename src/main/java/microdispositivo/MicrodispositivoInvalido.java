@@ -13,7 +13,7 @@ public class MicrodispositivoInvalido extends ImplMicrodispositivo {
 
     public static void main(String[] args) {
         MicrodispositivoInvalido m = new MicrodispositivoInvalido(
-                "192.168.0.8",
+                "192.168.0.7",
                 5005,
                 2000,
                 "185.0.0.1",

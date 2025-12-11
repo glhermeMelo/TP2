@@ -5,7 +5,7 @@ public class Borda2 {
         ServidorDeBorda servidorDeBorda =
                 new ServidorDeBorda(
                         7002,
-                        "192.168.0.8",
+                        "192.168.0.7",
                         "Borda-2",
                         "192.168.0.8",
                         6001,

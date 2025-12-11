@@ -15,13 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServidorLocalizacao extends ImplServidor {
     private ConcurrentHashMap<String, List<InfoServidorBorda>> localizacaoServidoresDeBorda;
     private ConcurrentHashMap<String, Integer> contadoresRoundRobin;
-    private ConcurrentHashMap<String, String> servicosRMI;
 
     public ServidorLocalizacao(int porta, String ip, String nome,
                                ConcurrentHashMap<String, String> servicosRMI) {
         super(porta, ip, nome);
         this.localizacaoServidoresDeBorda = new ConcurrentHashMap<>();
-        this.servicosRMI = servicosRMI;
         rodar();
     }
 
@@ -121,8 +119,7 @@ public class ServidorLocalizacao extends ImplServidor {
                         new ServidorDeLocalizacaoAceitaClientes(
                                 cliente,
                                 chavesClientes,
-                                localizacaoServidoresDeBorda,
-                                servicosRMI);
+                                localizacaoServidoresDeBorda);
                 new Thread(aceitaCliente).start();
             }
         } catch (IOException e) {
@@ -236,7 +233,7 @@ public class ServidorLocalizacao extends ImplServidor {
         servicosRMI.put("MonitoramentoClimatico", "localhost:1099");
 
         new ServidorLocalizacao(6001,
-                "192.168.0.8",
+                "192.168.0.7",
                 "ServidorLocalizacao", servicosRMI);
     }
 }
