@@ -16,10 +16,10 @@ public class ServidorLocalizacao extends ImplServidor {
     private ConcurrentHashMap<String, List<InfoServidorBorda>> localizacaoServidoresDeBorda;
     private ConcurrentHashMap<String, Integer> contadoresRoundRobin;
 
-    public ServidorLocalizacao(int porta, String ip, String nome,
-                               ConcurrentHashMap<String, String> servicosRMI) {
+    public ServidorLocalizacao(int porta, String ip, String nome) {
         super(porta, ip, nome);
         this.localizacaoServidoresDeBorda = new ConcurrentHashMap<>();
+        this.contadoresRoundRobin = new ConcurrentHashMap<>();
         rodar();
     }
 
@@ -70,7 +70,6 @@ public class ServidorLocalizacao extends ImplServidor {
         int porta = Integer.parseInt(partes[1]);
 
         try (Socket socket = new Socket()) {
-
             socket.connect(new InetSocketAddress(ip, porta), 2000);
             return true;
         } catch (IOException e) {
@@ -78,10 +77,22 @@ public class ServidorLocalizacao extends ImplServidor {
         }
     }
 
+    // ALTERADO: Adicionada lógica de fallback para aceitar qualquer localização
     private synchronized String pegarRoundRobin(String endereco) {
         List<InfoServidorBorda> lista = localizacaoServidoresDeBorda.get(endereco);
+        String chaveContador = endereco;
 
+        // Se não encontrar o local específico, pega TODAS as bordas conhecidas (Fallback)
         if (lista == null || lista.isEmpty()) {
+            System.out.println("Localização '" + endereco + "' não mapeada. Usando fallback (qualquer borda disponível).");
+            lista = new ArrayList<>();
+            for (List<InfoServidorBorda> l : localizacaoServidoresDeBorda.values()) {
+                lista.addAll(l);
+            }
+            chaveContador = "GLOBAL_FALLBACK";
+        }
+
+        if (lista.isEmpty()) {
             return null;
         }
 
@@ -97,7 +108,7 @@ public class ServidorLocalizacao extends ImplServidor {
             return null;
         }
 
-        int indice = contadoresRoundRobin.getOrDefault(endereco, 0);
+        int indice = contadoresRoundRobin.getOrDefault(chaveContador, 0);
 
         if (indice >= ativos.size()) {
             indice = 0;
@@ -105,7 +116,7 @@ public class ServidorLocalizacao extends ImplServidor {
 
         String escolhido = ativos.get(indice).getEndereco();
 
-        contadoresRoundRobin.put(escolhido, (indice + 1) % ativos.size());
+        contadoresRoundRobin.put(chaveContador, (indice + 1) % ativos.size());
 
         return escolhido;
     }
@@ -200,11 +211,11 @@ public class ServidorLocalizacao extends ImplServidor {
             String endereco = pegarRoundRobin(localizacao);
 
             if (endereco == null) {
-                System.err.println("Localização '" + localizacao + "' não cadastrada.");
-                return "ERRO: Localização desconhecida";
+                System.err.println("Nenhuma Borda disponível no sistema.");
+                return "ERRO: Indisponivel";
             }
 
-            System.out.println("Localização '" + localizacao + "' mapeada para " + endereco);
+            System.out.println("Localização '" + localizacao + "' redirecionada para " + endereco);
             return endereco;
 
         } catch (Exception e) {
@@ -229,11 +240,8 @@ public class ServidorLocalizacao extends ImplServidor {
     }
 
     public static void main(String[] args) {
-        ConcurrentHashMap<String, String> servicosRMI = new ConcurrentHashMap<>();
-        servicosRMI.put("MonitoramentoClimatico", "localhost:1099");
-
         new ServidorLocalizacao(6001,
                 "192.168.0.7",
-                "ServidorLocalizacao", servicosRMI);
+                "ServidorLocalizacao");
     }
 }

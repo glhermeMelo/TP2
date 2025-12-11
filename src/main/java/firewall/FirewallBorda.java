@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.util.List;
 
 public class FirewallBorda implements Runnable {
@@ -14,6 +15,7 @@ public class FirewallBorda implements Runnable {
     private String ipDestino;
     private List<String> whitelist;
     private boolean isActive = true;
+    private SocketAddress ultimoClienteAddress;
 
     public FirewallBorda(int portaEscuta, int portaSaidaBorda, String ipDestino, List<String> whitelist) {
         this.portaEscuta = portaEscuta;
@@ -25,23 +27,35 @@ public class FirewallBorda implements Runnable {
     @Override
     public void run() {
         System.out.println("Firewall Borda iniciado na porta " + portaEscuta + " -> Encaminhando para " + portaSaidaBorda);
-        try (DatagramSocket socket = new DatagramSocket()) {
+        try (DatagramSocket socket = new DatagramSocket(portaEscuta)) {
             byte[] buffer = new byte[65535];
 
             while (isActive) {
                 DatagramPacket pacoteRecebido = new DatagramPacket(buffer, buffer.length);
                 socket.receive(pacoteRecebido);
 
-                byte[] dados = new byte[pacoteRecebido.getLength()];
-                System.arraycopy(pacoteRecebido.getData(), 0, dados, 0, pacoteRecebido.getLength());
+                int portaOrigem = pacoteRecebido.getPort();
+                InetAddress ipOrigem = pacoteRecebido.getAddress();
 
-                String supostoIp = extrairIp(pacoteRecebido);
-
-                if (supostoIp != null && verificarIp(supostoIp)) {
-                    System.out.println("Pacote válido de: " + supostoIp);
-                    encaminharMensagem(socket, pacoteRecebido);
+                if (portaOrigem == portaSaidaBorda && ipOrigem.getHostAddress().equals(ipDestino)) {
+                    if (ultimoClienteAddress != null) {
+                        DatagramPacket pacoteResposta = new DatagramPacket(
+                                pacoteRecebido.getData(),
+                                pacoteRecebido.getLength(),
+                                ultimoClienteAddress
+                        );
+                        socket.send(pacoteResposta);
+                    }
                 } else {
-                    System.err.println("Pacote rejeitado de: " + supostoIp);
+                    String supostoIp = extrairIp(pacoteRecebido);
+
+                    if (supostoIp != null && verificarIp(supostoIp)) {
+                        System.out.println("Pacote válido de: " + supostoIp);
+                        this.ultimoClienteAddress = pacoteRecebido.getSocketAddress();
+                        encaminharMensagem(socket, pacoteRecebido);
+                    } else {
+                        System.err.println("Pacote rejeitado de: " + supostoIp);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -62,13 +76,10 @@ public class FirewallBorda implements Runnable {
             return null;
 
         } catch (Exception e) {
-            System.err.println("Erro ao obter ip do dispositivo: " + e.getMessage());
             return null;
-
         }
     }
 
-    //firewall funciona no modo bloquear tudo que nao for permitido
     private boolean verificarIp(String ip) {
         for (String s : whitelist) {
             if (ip.startsWith(s)) {
@@ -89,9 +100,5 @@ public class FirewallBorda implements Runnable {
         } catch (IOException e) {
             System.err.println("Erro ao encaminhar pacote: " + e.getMessage());
         }
-    }
-
-    private void analisarDados() {
-
     }
 }

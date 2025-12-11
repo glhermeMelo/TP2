@@ -26,10 +26,8 @@ public abstract class ImplMicrodispositivo {
     private int portaServidorDeBorda;
     private String enderecoBorda;
 
-    //HashMap para armazenar a porta dos servidores de localizacao e as chaves
     protected ConcurrentHashMap<Integer, KeyPair> chavesServidorLocalizacao;
 
-    //HashMap para armazenar a porta dos servidores de borda e as chaves
     protected ConcurrentHashMap<Integer, KeyPair> chavesServidorDeBorda;
 
     public ImplMicrodispositivo(String ip, int porta, long intervaloMillis, String idDispositivo, int servidorDescoberta, String localizacao) {
@@ -52,12 +50,9 @@ public abstract class ImplMicrodispositivo {
         rodar();
     }
 
-    //A threadGeradora ja para em intervalos por causa do sleep no Runnable
     protected void rodar() {
-        // 1. Handshake com Servidor de Localizacao
         realizarHandshakeUDP(this.ip, portaServidorLocalizacao, chavesServidorLocalizacao);
 
-        // 2. Envia localização cifrada para descobrir a localizacao do servidor de borda
         criptografarLocalizacao();
 
         if (portaServidorDeBorda <= 0 || this.enderecoBorda == null) {
@@ -65,10 +60,8 @@ public abstract class ImplMicrodispositivo {
             return;
         }
 
-        // 3. Handshake com Servidor de Borda
         realizarHandshakeUDP(this.enderecoBorda, portaServidorDeBorda, chavesServidorDeBorda);
 
-        // Thread para geracao de dados
         if (threadGeradora == null || !threadGeradora.isAlive()) {
             threadGeradora = new Thread(geradorDeLeituras);
             threadGeradora.start();
@@ -82,9 +75,14 @@ public abstract class ImplMicrodispositivo {
         Thread monitora = new Thread(() -> {
             try {
                 while (geradorDeLeituras.isActive()) {
-                    String leituraJson = geradorDeLeituras.getLeitura();
+                    criptografarLocalizacao();
 
-                    enviarLeituraAoServidorDeBorda(leituraJson);
+                    if (portaServidorDeBorda > 0 && enderecoBorda != null) {
+                        realizarHandshakeUDP(enderecoBorda, portaServidorDeBorda, chavesServidorDeBorda);
+
+                        String leituraJson = geradorDeLeituras.getLeitura();
+                        enviarLeituraAoServidorDeBorda(leituraJson);
+                    }
 
                     Thread.sleep(geradorDeLeituras.getIntervaloMillis());
                 }
@@ -98,7 +96,6 @@ public abstract class ImplMicrodispositivo {
         return monitora;
     }
 
-    //Para o Runnable e depois interrompe a Thread
     protected void parar() {
         geradorDeLeituras.parar();
         if (threadGeradora != null && threadGeradora.isAlive()) {
@@ -109,7 +106,6 @@ public abstract class ImplMicrodispositivo {
                 Thread.currentThread().interrupt();
             }
         }
-        // Fechamento do socket UDP
         if (socketUDP != null && !socketUDP.isClosed()) {
             socketUDP.close();
         }
@@ -126,20 +122,17 @@ public abstract class ImplMicrodispositivo {
         PublicKey chavePublicaServidor = kp.getPublic();
 
         try {
-            // 1) gera chave de sessão ChaCha20 (32 bytes)
             SecureRandom sr = new SecureRandom();
 
             byte[] bytesChaveSessao = new byte[32];
             sr.nextBytes(bytesChaveSessao);
             SecretKey chaveSessao = new SecretKeySpec(bytesChaveSessao, "ChaCha20");
 
-            // 2) cifra a chave de sessão com RSA/OAEP usando a public key do servidor
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
             cipher.init(Cipher.ENCRYPT_MODE, chavePublicaServidor);
             byte[] bytesEncriptados = cipher.doFinal(bytesChaveSessao);
 
-            // 3) cifra o texto com ChaCha20-Poly1305
-            byte[] nonce = new byte[12]; // 96 bits nonce para ChaCha20-Poly1305
+            byte[] nonce = new byte[12];
             sr.nextBytes(nonce);
 
             IvParameterSpec parameterSpec = new IvParameterSpec(nonce);
@@ -149,14 +142,11 @@ public abstract class ImplMicrodispositivo {
 
             byte[] bytesEncriptadosTextoPlano = chacha.doFinal(localizacao.getBytes());
 
-            // DeviceId — assumimos getter no gerador
             String deviceId = geradorDeLeituras.getIdDispositivo();
 
-            // 4) envia id + chave sessao + nonce + payloadEncrypted ao servidor de localizacao
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream saida = new ObjectOutputStream(baos);
 
-            // Envia na ordem esperada pelo servidor
             saida.writeObject(deviceId);
             saida.writeObject(bytesEncriptados);
             saida.writeObject(nonce);
@@ -170,8 +160,6 @@ public abstract class ImplMicrodispositivo {
             socketUDP.send(pacoteEnvio);
             System.out.println("Localização (cifrada) enviada com sucesso para " + ip + ":" + portaServidorLocalizacao);
 
-
-            // 5) recebe resposta do servidor (porta do servidor de borda)
             try {
                 socketUDP.setSoTimeout(5000);
 
@@ -229,7 +217,6 @@ public abstract class ImplMicrodispositivo {
 
     protected void realizarHandshakeUDP(String ipDestino, int portaServidor, ConcurrentHashMap<Integer, KeyPair> chavesServidor) {
         try {
-            // 1 - Gerando chaves locais se não existirem
             if (!chavesServidor.containsKey(portaServidor)) {
                 Security.addProvider(new BouncyCastleProvider());
                 KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
@@ -241,7 +228,6 @@ public abstract class ImplMicrodispositivo {
             KeyPair kpLocal = chavesServidor.get(portaServidor);
             String deviceId = geradorDeLeituras.getIdDispositivo();
 
-            // 2 - Prepara o pacote de Handshake (ID + Chave Pública Local)
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
             oos.writeObject(deviceId);
@@ -249,18 +235,15 @@ public abstract class ImplMicrodispositivo {
             oos.flush();
             byte[] dados = baos.toByteArray();
 
-            // 3 - Envia via UDP
             InetAddress endereco = InetAddress.getByName(ipDestino);
             DatagramPacket pacoteEnvio = new DatagramPacket(dados, dados.length, endereco, portaServidor);
             this.socketUDP.send(pacoteEnvio);
 
-            // 4 - Aguarda resposta (Chave Pública do Servidor)
             this.socketUDP.setSoTimeout(5000);
             byte[] buffer = new byte[4096];
             DatagramPacket pacoteResp = new DatagramPacket(buffer, buffer.length);
             this.socketUDP.receive(pacoteResp);
 
-            // 5 - Processa a resposta
             ByteArrayInputStream bais = new ByteArrayInputStream(pacoteResp.getData(), 0, pacoteResp.getLength());
             ObjectInputStream ois = new ObjectInputStream(bais);
             Object obj = ois.readObject();
@@ -298,22 +281,18 @@ public abstract class ImplMicrodispositivo {
         try {
             SecureRandom sr = new SecureRandom();
 
-            // Gerar chave da sessao
             byte[] bytesChaveSessao = new byte[32];
             sr.nextBytes(bytesChaveSessao);
             SecretKey chaveSessao = new SecretKeySpec(bytesChaveSessao, "ChaCha20");
 
-            // Gerar nonce
             byte[] nonce = new byte[12];
             sr.nextBytes(nonce);
             IvParameterSpec ivParameterSpec = new IvParameterSpec(nonce);
 
-            // Cifrar mensagem
             Cipher chacha = Cipher.getInstance("ChaCha20-Poly1305");
             chacha.init(Cipher.ENCRYPT_MODE, chaveSessao, ivParameterSpec);
             byte[] bytesMensagemEncriptada = chacha.doFinal(textoPlano.getBytes());
 
-            // Cifrar a chave da sessao
             Cipher rsa = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
             rsa.init(Cipher.ENCRYPT_MODE, chavePublicaBorda);
             byte[] bytesChaveSessaoEncriptada = rsa.doFinal(bytesChaveSessao);
