@@ -2,6 +2,8 @@ package servidor.datacenter;
 
 import org.springframework.boot.SpringApplication;
 import servidor.ImplServidor;
+import servidor.threads.DatacenterAceita;
+import servidor.threads.EnviaRegistros;
 import servidor.threads.ProxyAceitaServidoresDeBorda;
 import servidorRMI.ImplMonitoramentoClimatico;
 import servidorRMI.threads.CalculaMaximasPorSensor;
@@ -12,9 +14,7 @@ import servidorRMI.threads.CalculaValoresMedios;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import entities.RegistroClimatico;
 
@@ -27,13 +27,25 @@ public class DataCenter extends ImplServidor {
     private CalculaMediasPorSensor threadMediasPorSensor;
     private int portaHTTP;
 
+    private List<Integer> portasRepasse;
+    private Map<Integer, ConcurrentHashMap<Integer, List<String>>> buffersRepasse;
+
     private static ImplMonitoramentoClimatico servicoMonitoramento;
 
-    public DataCenter(int porta, String ip, String nome, int portaHTTP) {
+    public DataCenter(int porta, String ip, String nome, int portaHTTP, List<Integer> portasRepasse) {
         super(porta, ip, nome);
         this.portaHTTP = portaHTTP;
         dadosGlobais = new ConcurrentHashMap<>();
         listaThreads = new ArrayList<>();
+        buffersRepasse = new ConcurrentHashMap<>();
+        this.portasRepasse = portasRepasse;
+
+        if (portasRepasse != null) {
+            for(Integer p : portasRepasse) {
+                buffersRepasse.put(p, new ConcurrentHashMap<>());
+            }
+        }
+
         this.threadMaximos = new CalculaValorMaximo(dadosGlobais, 5000);
         this.threadMedios = new CalculaValoresMedios(dadosGlobais, 5000);
         this.threadMaximasPorSensor = new CalculaMaximasPorSensor(dadosGlobais, 5000);
@@ -63,14 +75,19 @@ public class DataCenter extends ImplServidor {
             listaThreads.add(calculadoraMaximoSensor);
             listaThreads.add(calculadoraMediosSensor);
 
+            iniciarThreadsRepasse();
+
             implementarHTTP();
 
             while (isActive) {
                 Socket cliente = serverSocket.accept();
-                Thread aceitadora = new Thread(new ProxyAceitaServidoresDeBorda(cliente,
-                        ip, porta,
+                Thread aceitadora = new Thread(new DatacenterAceita(
+                        cliente,
                         chavesClientes,
-                        chavesDatacenter));
+                        dadosGlobais,
+                        portasRepasse,
+                        buffersRepasse,
+                        nome));
 
                 aceitadora.start();
 
@@ -97,5 +114,24 @@ public class DataCenter extends ImplServidor {
 
     public static ImplMonitoramentoClimatico getServicoMonitoramento() {
         return servicoMonitoramento;
+    }
+
+    private void iniciarThreadsRepasse() {
+        if (portasRepasse == null)
+            return;
+
+        for (Integer p : portasRepasse) {
+            EnviaRegistros enviador = new EnviaRegistros(
+                    buffersRepasse.get(p),
+                    this.ip,
+                    p,
+                    this.nome + "-Repassador",
+                    2000
+            );
+            Thread t = new Thread(enviador);
+            t.start();
+            listaThreads.add(t);
+            System.out.println("Repasse de dados configurado para porta " + p);
+        }
     }
 }

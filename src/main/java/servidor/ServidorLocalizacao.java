@@ -51,7 +51,7 @@ public class ServidorLocalizacao extends ImplServidor {
                         }
                     }
                 });
-                Thread.sleep(5000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -77,7 +77,6 @@ public class ServidorLocalizacao extends ImplServidor {
         }
     }
 
-    // ALTERADO: Adicionada lógica de fallback para aceitar qualquer localização
     private synchronized String pegarRoundRobin(String endereco) {
         List<InfoServidorBorda> lista = localizacaoServidoresDeBorda.get(endereco);
         String chaveContador = endereco;
