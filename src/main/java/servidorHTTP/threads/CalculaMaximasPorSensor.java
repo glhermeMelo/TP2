@@ -1,4 +1,4 @@
-package servidorRMI.threads;
+package servidorHTTP.threads;
 
 import entities.RegistroClimatico;
 
@@ -133,6 +133,10 @@ public class CalculaMaximasPorSensor implements Runnable {
         } catch (Exception e) {
             System.err.println("Erro ao calcular máximo para sensor " + idSensor + ": " + e.getMessage());
         }
+    }
+
+    private void calcularMaximoPorSensor(Integer idSensor, String tipoDado, Double dado) {
+
     }
 
     private void calcularMaximoPorSensor(Integer idSensor, List<RegistroClimatico> lista, String tipoDado, ToDoubleFunction<RegistroClimatico> funcao) {

@@ -4,12 +4,11 @@ import org.springframework.boot.SpringApplication;
 import servidor.ImplServidor;
 import servidor.threads.DatacenterAceita;
 import servidor.threads.EnviaRegistros;
-import servidor.threads.ProxyAceitaServidoresDeBorda;
-import servidorRMI.ImplMonitoramentoClimatico;
-import servidorRMI.threads.CalculaMaximasPorSensor;
-import servidorRMI.threads.CalculaMediasPorSensor;
-import servidorRMI.threads.CalculaValorMaximo;
-import servidorRMI.threads.CalculaValoresMedios;
+import servidorHTTP.ImplMonitoramentoClimatico;
+import servidorHTTP.threads.CalculaMaximasPorSensor;
+import servidorHTTP.threads.CalculaMediasPorSensor;
+import servidorHTTP.threads.CalculaValorMaximo;
+import servidorHTTP.threads.CalculaValoresMedios;
 
 import java.io.IOException;
 import java.net.ServerSocket;

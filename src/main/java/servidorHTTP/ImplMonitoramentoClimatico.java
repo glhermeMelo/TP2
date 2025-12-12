@@ -1,14 +1,12 @@
-package servidorRMI;
+package servidorHTTP;
 
 import entities.RegistroClimatico;
-import servidorRMI.threads.CalculaMaximasPorSensor;
-import servidorRMI.threads.CalculaMediasPorSensor;
-import servidorRMI.threads.CalculaValorMaximo;
-import servidorRMI.threads.CalculaValoresMedios;
+import servidorHTTP.threads.CalculaMaximasPorSensor;
+import servidorHTTP.threads.CalculaMediasPorSensor;
+import servidorHTTP.threads.CalculaValorMaximo;
+import servidorHTTP.threads.CalculaValoresMedios;
 
-import java.rmi.RemoteException;
-
-public class ImplMonitoramentoClimatico implements IMonitoramentoRMI {
+public class ImplMonitoramentoClimatico implements IMonitoramentoHTTP {
     private final CalculaValoresMedios calculaValoresMedios;
     private final CalculaValorMaximo calculaValorMaximo;
     private final CalculaMediasPorSensor calculaMediasPorSensor;
@@ -177,5 +175,55 @@ public class ImplMonitoramentoClimatico implements IMonitoramentoRMI {
     @Override
     public Double getRadiacaoUVMediaPorSensor(int idSensor) {
         return calculaMediasPorSensor.getRadiacaoUVMedia(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getTemperaturaMaximaPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getTemperaturaMaxima(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getUmidadeMaximaPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getUmidadeMaxima(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getCO2MaximoPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getCO2Maximo(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getCOMaximoPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getCOMaximo(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getNO2MaximoPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getNO2Maximo(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getSO2MaximoPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getSO2Maximo(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getPM2_5MaximoPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getPM2_5Maximo(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getPM10MaximoPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getPM10Maximo(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getRuidoMaximoPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getRuidoMaximo(idSensor);
+    }
+
+    @Override
+    public RegistroClimatico getRadiacaoUVMaximaPorSensor(int idSensor) {
+        return calculaMaximasPorSensor.getRadiacaoUVMaxima(idSensor);
     }
 }

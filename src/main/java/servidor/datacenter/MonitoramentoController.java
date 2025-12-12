@@ -6,12 +6,47 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import servidorRMI.ImplMonitoramentoClimatico;
+import servidorHTTP.ImplMonitoramentoClimatico;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @SpringBootApplication
 @RestController
 @RequestMapping("/monitoramento")
 public class MonitoramentoController {
+
+    @GetMapping("/sensor/{id}/medias")
+    public Map<String, Double> getTodasMediasPorSensor(@PathVariable int id) {
+        Map<String, Double> medias = new LinkedHashMap<>();
+        medias.put("temperatura", getService().getTemperaturaMediaPorSensor(id));
+        medias.put("umidade", getService().getUmidadeMediaPorSensor(id));
+        medias.put("co2", getService().getCO2MedioPorSensor(id));
+        medias.put("co", getService().getCOMedioPorSensor(id));
+        medias.put("no2", getService().getNO2MedioPorSensor(id));
+        medias.put("so2", getService().getSO2MedioPorSensor(id));
+        medias.put("pm2_5", getService().getPM2_5MedioPorSensor(id));
+        medias.put("pm10", getService().getPM10MedioPorSensor(id));
+        medias.put("ruido", getService().getRuidoMedioPorSensor(id));
+        medias.put("radiacaouv", getService().getRadiacaoUVMediaPorSensor(id));
+        return medias;
+    }
+
+    @GetMapping("/sensor/{id}/maximos")
+    public Map<String, RegistroClimatico> getTodosMaximosPorSensor(@PathVariable int id) {
+        Map<String, RegistroClimatico> maximos = new LinkedHashMap<>();
+        maximos.put("temperatura", getService().getTemperaturaMaximaPorSensor(id));
+        maximos.put("umidade", getService().getUmidadeMaximaPorSensor(id));
+        maximos.put("co2", getService().getCO2MaximoPorSensor(id));
+        maximos.put("co", getService().getCOMaximoPorSensor(id));
+        maximos.put("no2", getService().getNO2MaximoPorSensor(id));
+        maximos.put("so2", getService().getSO2MaximoPorSensor(id));
+        maximos.put("pm2_5", getService().getPM2_5MaximoPorSensor(id));
+        maximos.put("pm10", getService().getPM10MaximoPorSensor(id));
+        maximos.put("ruido", getService().getRuidoMaximoPorSensor(id));
+        maximos.put("radiacaouv", getService().getRadiacaoUVMaximaPorSensor(id));
+        return maximos;
+    }
 
     private ImplMonitoramentoClimatico getService() {
         return DataCenter.getServicoMonitoramento();

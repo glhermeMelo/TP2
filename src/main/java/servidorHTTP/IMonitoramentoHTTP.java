@@ -1,11 +1,8 @@
-package servidorRMI;
+package servidorHTTP;
 
 import entities.RegistroClimatico;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
-
-public interface IMonitoramentoRMI {
+public interface IMonitoramentoHTTP {
     RegistroClimatico getTemperaturaMaxima() ;
     RegistroClimatico getCO2Maximo() ;
     RegistroClimatico getCOMaximo() ;
@@ -39,4 +36,14 @@ public interface IMonitoramentoRMI {
     Double getRuidoMedioPorSensor(int idSensor) ;
     Double getRadiacaoUVMediaPorSensor(int idSensor) ;
 
+    RegistroClimatico getTemperaturaMaximaPorSensor(int idSensor);
+    RegistroClimatico getUmidadeMaximaPorSensor(int idSensor);
+    RegistroClimatico getCO2MaximoPorSensor(int idSensor);
+    RegistroClimatico getCOMaximoPorSensor(int idSensor);
+    RegistroClimatico getNO2MaximoPorSensor(int idSensor);
+    RegistroClimatico getSO2MaximoPorSensor(int idSensor);
+    RegistroClimatico getPM2_5MaximoPorSensor(int idSensor);
+    RegistroClimatico getPM10MaximoPorSensor(int idSensor);
+    RegistroClimatico getRuidoMaximoPorSensor(int idSensor);
+    RegistroClimatico getRadiacaoUVMaximaPorSensor(int idSensor);
 }
