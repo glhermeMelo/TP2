@@ -11,6 +11,10 @@ import servidorHTTP.ImplMonitoramentoClimatico;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import java.rmi.RemoteException;
+import java.util.HashMap;
+import java.util.Map;
+
 @SpringBootApplication
 @RestController
 @RequestMapping("/monitoramento")
@@ -52,153 +56,70 @@ public class MonitoramentoController {
         return DataCenter.getServicoMonitoramento();
     }
 
-    @GetMapping("/maximos/temperatura")
-    public RegistroClimatico getTemperaturaMaxima() {
-        return getService().getTemperaturaMaxima();
+    // =======================================================
+    // 1. Resumo de Médias por Sensor (Igual ao Cliente RMI)
+    // =======================================================
+    @GetMapping("/sensor/{id}/resumo")
+    public Map<String, Object> getResumoPorSensor(@PathVariable int id) {
+        Map<String, Object> resumo = new HashMap<>();
+        ImplMonitoramentoClimatico service = getService();
+
+        resumo.put("id_sensor", id);
+        resumo.put("temperatura", service.getTemperaturaMediaPorSensor(id));
+        resumo.put("umidade", service.getUmidadeMediaPorSensor(id));
+        resumo.put("co2", service.getCO2MedioPorSensor(id));
+        resumo.put("co", service.getCOMedioPorSensor(id));
+        resumo.put("no2", service.getNO2MedioPorSensor(id));
+        resumo.put("so2", service.getSO2MedioPorSensor(id));
+        resumo.put("pm2_5", service.getPM2_5MedioPorSensor(id));
+        resumo.put("pm10", service.getPM10MedioPorSensor(id));
+        resumo.put("ruido", service.getRuidoMedioPorSensor(id));
+        resumo.put("radiacao_uv", service.getRadiacaoUVMediaPorSensor(id));
+
+        return resumo;
     }
 
-    @GetMapping("/maximos/umidade")
-    public RegistroClimatico getUmidadeMaxima() {
-        return getService().getUmidadeMaxima();
+    // =======================================================
+    // 2. Resumo de Médias Globais
+    // =======================================================
+    @GetMapping("/medias/geral")
+    public Map<String, Object> getMediasGerais() {
+        Map<String, Object> resumo = new HashMap<>();
+        ImplMonitoramentoClimatico service = getService();
+
+        resumo.put("temperatura", service.getTemperaturaMedia());
+        resumo.put("umidade", service.getUmidadeMedia());
+        resumo.put("co2", service.getCO2Medio());
+        resumo.put("co", service.getCOMedio());
+        resumo.put("no2", service.getNO2Medio());
+        resumo.put("so2", service.getSO2Medio());
+        resumo.put("pm2_5", service.getPM2_5Medio());
+        resumo.put("pm10", service.getPM10Medio());
+        resumo.put("ruido", service.getRuidoMedio());
+        resumo.put("radiacao_uv", service.getRadiacaoUVMedia());
+
+        return resumo;
     }
 
-    @GetMapping("/maximos/co2")
-    public RegistroClimatico getCO2Maximo() {
-        return getService().getCO2Maximo();
-    }
+    // =======================================================
+    // 3. Resumo de Máximos Globais
+    // =======================================================
+    @GetMapping("/maximos/geral")
+    public Map<String, Object> getMaximosGerais() {
+        Map<String, Object> resumo = new HashMap<>();
+        ImplMonitoramentoClimatico service = getService();
 
-    @GetMapping("/maximos/co")
-    public RegistroClimatico getCOMaximo() {
-        return getService().getCOMaximo();
-    }
+        resumo.put("temperatura", service.getTemperaturaMaxima());
+        resumo.put("umidade", service.getUmidadeMaxima());
+        resumo.put("co2", service.getCO2Maximo());
+        resumo.put("co", service.getCOMaximo());
+        resumo.put("no2", service.getNO2Maximo());
+        resumo.put("so2", service.getSO2Maximo());
+        resumo.put("pm2_5", service.getPM2_5Maximo());
+        resumo.put("pm10", service.getPM10Maximo());
+        resumo.put("ruido", service.getRuidoMaximo());
+        resumo.put("radiacao_uv", service.getRadiacaoUVMaxima());
 
-    @GetMapping("/maximos/no2")
-    public RegistroClimatico getNO2Maximo() {
-        return getService().getNO2Maximo();
-    }
-
-    @GetMapping("/maximos/so2")
-    public RegistroClimatico getSO2Maximo() {
-        return getService().getSO2Maximo();
-    }
-
-    @GetMapping("/maximos/pm2_5")
-    public RegistroClimatico getPM2_5Maximo() {
-        return getService().getPM2_5Maximo();
-    }
-
-    @GetMapping("/maximos/pm10")
-    public RegistroClimatico getPM10Maximo() {
-        return getService().getPM10Maximo();
-    }
-
-    @GetMapping("/maximos/ruido")
-    public RegistroClimatico getRuidoMaximo() {
-        return getService().getRuidoMaximo();
-    }
-
-    @GetMapping("/maximos/radiacaouv")
-    public RegistroClimatico getRadiacaoUVMaxima() {
-        return getService().getRadiacaoUVMaxima();
-    }
-
-    @GetMapping("/medias/temperatura")
-    public Double getTemperaturaMedia() {
-        return getService().getTemperaturaMedia();
-    }
-
-    @GetMapping("/medias/umidade")
-    public Double getUmidadeMedia() {
-        return getService().getUmidadeMedia();
-    }
-
-    @GetMapping("/medias/co2")
-    public Double getCO2Medio() {
-        return getService().getCO2Medio();
-    }
-
-    @GetMapping("/medias/co")
-    public Double getCOMedio() {
-        return getService().getCOMedio();
-    }
-
-    @GetMapping("/medias/no2")
-    public Double getNO2Medio() {
-        return getService().getNO2Medio();
-    }
-
-    @GetMapping("/medias/so2")
-    public Double getSO2Medio() {
-        return getService().getSO2Medio();
-    }
-
-    @GetMapping("/medias/pm2_5")
-    public Double getPM2_5Medio() {
-        return getService().getPM2_5Medio();
-    }
-
-    @GetMapping("/medias/pm10")
-    public Double getPM10Medio() {
-        return getService().getPM10Medio();
-    }
-
-    @GetMapping("/medias/ruido")
-    public Double getRuidoMedio() {
-        return getService().getRuidoMedio();
-    }
-
-    @GetMapping("/medias/radiacaouv")
-    public Double getRadiacaoUVMedia() {
-        return getService().getRadiacaoUVMedia();
-    }
-
-    @GetMapping("/sensor/{id}/medias/temperatura")
-    public Double getTemperaturaMediaPorSensor(@PathVariable int id) {
-        return getService().getTemperaturaMediaPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/umidade")
-    public Double getUmidadeMediaPorSensor(@PathVariable int id) {
-        return getService().getUmidadeMediaPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/co2")
-    public Double getCO2MedioPorSensor(@PathVariable int id) {
-        return getService().getCO2MedioPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/co")
-    public Double getCOMedioPorSensor(@PathVariable int id) {
-        return getService().getCOMedioPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/no2")
-    public Double getNO2MedioPorSensor(@PathVariable int id) {
-        return getService().getNO2MedioPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/so2")
-    public Double getSO2MedioPorSensor(@PathVariable int id) {
-        return getService().getSO2MedioPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/pm2_5")
-    public Double getPM2_5MedioPorSensor(@PathVariable int id) {
-        return getService().getPM2_5MedioPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/pm10")
-    public Double getPM10MedioPorSensor(@PathVariable int id) {
-        return getService().getPM10MedioPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/ruido")
-    public Double getRuidoMedioPorSensor(@PathVariable int id) {
-        return getService().getRuidoMedioPorSensor(id);
-    }
-
-    @GetMapping("/sensor/{id}/medias/radiacaouv")
-    public Double getRadiacaoUVMediaPorSensor(@PathVariable int id) {
-        return getService().getRadiacaoUVMediaPorSensor(id);
+        return resumo;
     }
 }

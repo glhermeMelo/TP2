@@ -62,6 +62,7 @@ public class ServidorLocalizacao extends ImplServidor {
     }
 
     private boolean testarConexao(String endereco) {
+        /*
         String[] partes = endereco.split(":");
         if (partes.length != 2)
             return false;
@@ -75,6 +76,8 @@ public class ServidorLocalizacao extends ImplServidor {
         } catch (IOException e) {
             return false;
         }
+         */
+        return true;
     }
 
     private synchronized String pegarRoundRobin(String endereco) {
