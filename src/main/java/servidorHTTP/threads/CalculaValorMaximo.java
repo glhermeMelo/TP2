@@ -24,18 +24,6 @@ public class CalculaValorMaximo implements Runnable {
     public void run() {
         while (isActive) {
             try {
-                /*
-                atualizarMaximo("temperatura", r -> Double.parseDouble(r.temperatura()));
-                atualizarMaximo("umidade", r -> Double.parseDouble(r.umidade()));
-                atualizarMaximo("co2", r -> Double.parseDouble(r.cO2()));
-                atualizarMaximo("co", r -> Double.parseDouble(r.cO()));
-                atualizarMaximo("no2", r -> Double.parseDouble(r.nO2()));
-                atualizarMaximo("so2", r -> Double.parseDouble(r.sO2()));
-                atualizarMaximo("pm2_5", r -> Double.parseDouble(r.pM2_5()));
-                atualizarMaximo("pm10", r -> Double.parseDouble(r.pM10()));
-                atualizarMaximo("ruido", r -> Double.parseDouble(r.ruido()));
-                atualizarMaximo("radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
-                 */
                 atualizarMaximo();
             } catch (Exception e) {
                 System.err.println("Erro ao calcular maximos: " + e.getMessage());
@@ -173,19 +161,6 @@ public class CalculaValorMaximo implements Runnable {
 
             if (radiacaoUVMaxima != null)
                 maximos.put("radiacaoUV", maxRegistroRadiacaoUV);
-        }
-    }
-
-    public synchronized void atualizarMaximo(String chave, ToDoubleFunction<RegistroClimatico> funcao) {
-        RegistroClimatico registro = dadosGLobais.values().stream()
-                .filter(Objects::nonNull)
-                .flatMap(List::stream)
-                .filter(Objects::nonNull)
-                .max(Comparator.comparingDouble(funcao))
-                .orElse(null);
-
-        if (registro != null) {
-            maximos.put(chave, registro);
         }
     }
 

@@ -104,8 +104,9 @@ public class DataCenter extends ImplServidor {
                 threadMaximos, threadMediasPorSensor, threadMaximasPorSensor);
 
         SpringApplication app = new SpringApplication(MonitoramentoController.class);
-        // Define a porta dinamicamente
+
         app.setDefaultProperties(Collections.singletonMap("server.port", String.valueOf(portaHTTP)));
+
         app.run();
 
         System.out.println("Servidor HTTP Spring Boot inicializado na porta " + portaHTTP + "!");

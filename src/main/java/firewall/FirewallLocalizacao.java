@@ -26,7 +26,7 @@ public class FirewallLocalizacao implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Firewall Localizacao iniciado na porta " + portaEscuta + " -> Encaminhando para " + portaSaidaLocalizacao);
+        System.out.println("Firewall de localizacao iniciado na porta " + portaEscuta + " -> Encaminhando para " + portaSaidaLocalizacao);
         try (DatagramSocket socket = new DatagramSocket(portaEscuta)) {
             byte[] buffer = new byte[65535];
 

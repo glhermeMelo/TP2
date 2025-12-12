@@ -23,19 +23,6 @@ public class CalculaValoresMedios implements Runnable {
     public void run() {
         while (isActive) {
             try {
-                /*
-                calculaMedia("temperatura", r -> Double.parseDouble(r.temperatura()));
-                calculaMedia("umidade", r -> Double.parseDouble(r.umidade()));
-                calculaMedia("co2", r -> Double.parseDouble(r.cO2()));
-                calculaMedia("co", r -> Double.parseDouble(r.cO()));
-                calculaMedia("no2", r -> Double.parseDouble(r.nO2()));
-                calculaMedia("so2", r -> Double.parseDouble(r.sO2()));
-                calculaMedia("pm2_5", r -> Double.parseDouble(r.pM2_5()));
-                calculaMedia("pm10", r -> Double.parseDouble(r.pM10()));
-                calculaMedia("ruido", r -> Double.parseDouble(r.ruido()));
-                calculaMedia("radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
-                 */
-
                 calculaMedia();
             } catch (Exception e) {
                 System.err.println("Erro ao calcular medias: " + e.getMessage());
@@ -116,18 +103,6 @@ public class CalculaValoresMedios implements Runnable {
         medias.put("radiacaoUV", mediaRadiacaoUV / registros);
     }
 
-    private void calculaMedia(String chave, ToDoubleFunction<RegistroClimatico> funcao) {
-        double media = dadosGLobais.values().stream()
-                .filter(Objects::nonNull)
-                .flatMap(List::stream)
-                .filter(Objects::nonNull)
-                .mapToDouble(funcao)
-                .average()
-                .orElse(-1);
-
-        medias.put(chave, media);
-    }
-    
     public void parar() {
         isActive = false;
     }

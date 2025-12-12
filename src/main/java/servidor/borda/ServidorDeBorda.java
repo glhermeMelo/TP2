@@ -217,18 +217,59 @@ public class ServidorDeBorda extends ImplServidor {
     }
 
     // Getters e Setters
-    public int getPorta() { return porta; }
-    public void setPorta(int porta) { this.porta = porta; }
-    public String getIp() { return ip; }
-    public void setIp(String ip) { this.ip = ip; }
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { isActive = active; }
-    public ServerSocket getServerSocket() { return serverSocket; }
-    public void setServerSocket(ServerSocket serverSocket) { this.serverSocket = serverSocket; }
-    public ConcurrentHashMap<Integer, List<String>> getMapaDeRegistrosClimaticos() { return mapaDeRegistrosClimaticos; }
-    public void setMapaDeRegistrosClimaticos(ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos) { this.mapaDeRegistrosClimaticos = mapaDeRegistrosClimaticos; }
-    public ConcurrentHashMap<String, KeyPair> getChavesClientes() { return chavesClientes; }
-    public void setChavesClientes(ConcurrentHashMap<String, KeyPair> chavesClientes) { this.chavesClientes = chavesClientes; }
+    public int getPorta() {
+        return porta;
+    }
+
+    public void setPorta(int porta) {
+        this.porta = porta;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
+    public ServerSocket getServerSocket() {
+        return serverSocket;
+    }
+
+    public void setServerSocket(ServerSocket serverSocket) {
+        this.serverSocket = serverSocket;
+    }
+
+    public ConcurrentHashMap<Integer, List<String>> getMapaDeRegistrosClimaticos() {
+        return mapaDeRegistrosClimaticos;
+    }
+
+    public void setMapaDeRegistrosClimaticos(ConcurrentHashMap<Integer, List<String>> mapaDeRegistrosClimaticos) {
+        this.mapaDeRegistrosClimaticos = mapaDeRegistrosClimaticos;
+    }
+
+    public ConcurrentHashMap<String, KeyPair> getChavesClientes() {
+        return chavesClientes;
+    }
+
+    public void setChavesClientes(ConcurrentHashMap<String, KeyPair> chavesClientes) {
+        this.chavesClientes = chavesClientes;
+    }
 }

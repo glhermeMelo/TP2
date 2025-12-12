@@ -56,9 +56,6 @@ public class MonitoramentoController {
         return DataCenter.getServicoMonitoramento();
     }
 
-    // =======================================================
-    // 1. Resumo de Médias por Sensor (Igual ao Cliente RMI)
-    // =======================================================
     @GetMapping("/sensor/{id}/resumo")
     public Map<String, Object> getResumoPorSensor(@PathVariable int id) {
         Map<String, Object> resumo = new HashMap<>();
@@ -79,9 +76,6 @@ public class MonitoramentoController {
         return resumo;
     }
 
-    // =======================================================
-    // 2. Resumo de Médias Globais
-    // =======================================================
     @GetMapping("/medias/geral")
     public Map<String, Object> getMediasGerais() {
         Map<String, Object> resumo = new HashMap<>();
@@ -101,9 +95,7 @@ public class MonitoramentoController {
         return resumo;
     }
 
-    // =======================================================
-    // 3. Resumo de Máximos Globais
-    // =======================================================
+
     @GetMapping("/maximos/geral")
     public Map<String, Object> getMaximosGerais() {
         Map<String, Object> resumo = new HashMap<>();

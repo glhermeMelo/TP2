@@ -54,7 +54,7 @@ public class FirewallBorda implements Runnable {
                         this.ultimoClienteAddress = pacoteRecebido.getSocketAddress();
                         encaminharMensagem(socket, pacoteRecebido);
                     } else {
-                        System.err.println("Pacote rejeitado de: " + supostoIp);
+                        System.err.println("Pacote inválido de: " + supostoIp);
                     }
                 }
             }

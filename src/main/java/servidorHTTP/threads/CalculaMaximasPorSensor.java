@@ -26,18 +26,6 @@ public class CalculaMaximasPorSensor implements Runnable {
             try {
                 dadosGlobais.forEach((idSensor, listaRegistros) -> {
                     if (listaRegistros != null && !listaRegistros.isEmpty()) {
-                        /*
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "temperatura", r -> Double.parseDouble(r.temperatura()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "umidade", r -> Double.parseDouble(r.umidade()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "co2", r -> Double.parseDouble(r.cO2()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "co", r -> Double.parseDouble(r.cO()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "no2", r -> Double.parseDouble(r.nO2()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "so2", r -> Double.parseDouble(r.sO2()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "pm2_5", r -> Double.parseDouble(r.pM2_5()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "pm10", r -> Double.parseDouble(r.pM10()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "ruido", r -> Double.parseDouble(r.ruido()));
-                        calcularMaximoPorSensor(idSensor, listaRegistros, "radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
-                         */
                         calcularMaximoPorSensor(idSensor, listaRegistros);
                     }
                 }) ;
@@ -132,27 +120,6 @@ public class CalculaMaximasPorSensor implements Runnable {
 
         } catch (Exception e) {
             System.err.println("Erro ao calcular máximo para sensor " + idSensor + ": " + e.getMessage());
-        }
-    }
-
-    private void calcularMaximoPorSensor(Integer idSensor, String tipoDado, Double dado) {
-
-    }
-
-    private void calcularMaximoPorSensor(Integer idSensor, List<RegistroClimatico> lista, String tipoDado, ToDoubleFunction<RegistroClimatico> funcao) {
-        try {
-            RegistroClimatico maxRegistro = lista.stream()
-                    .filter(Objects::nonNull)
-                    .max(Comparator.comparingDouble(funcao))
-                    .orElse(null);
-
-            if (maxRegistro != null) {
-                String chaveUnica = idSensor + "_" + tipoDado;
-                maximas.put(chaveUnica, maxRegistro);
-            }
-
-        } catch (Exception e) {
-            System.err.println("Erro ao calcular máximo para sensor " + idSensor + " (" + tipoDado + "): " + e.getMessage());
         }
     }
 

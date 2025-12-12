@@ -23,19 +23,18 @@ public class CalculaMediasPorSensor implements Runnable {
     public void run() {
         while (isActive) {
             try {
-                // Itera sobre cada sensor (ID) e sua lista de registros
                 dadosGLobais.forEach((idSensor, listaRegistros) -> {
                     if (listaRegistros != null && !listaRegistros.isEmpty()) {
-                        calcularMediaPorSensor(idSensor, listaRegistros, "temperatura", r -> Double.parseDouble(r.temperatura()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "umidade", r -> Double.parseDouble(r.umidade()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "co2", r -> Double.parseDouble(r.cO2()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "co", r -> Double.parseDouble(r.cO()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "no2", r -> Double.parseDouble(r.nO2()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "so2", r -> Double.parseDouble(r.sO2()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "pm2_5", r -> Double.parseDouble(r.pM2_5()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "pm10", r -> Double.parseDouble(r.pM10()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "ruido", r -> Double.parseDouble(r.ruido()));
-                        calcularMediaPorSensor(idSensor, listaRegistros, "radiacaoUV", r -> Double.parseDouble(r.radiacaoUV()));
+                        calcularMediaPorSensor(idSensor, listaRegistros, "temperatura");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "umidade");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "co2");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "co");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "no2");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "so2");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "pm2_5");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "pm10");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "ruido");
+                        calcularMediaPorSensor(idSensor, listaRegistros, "radiacaoUV");
                     }
                 });
 
@@ -50,19 +49,42 @@ public class CalculaMediasPorSensor implements Runnable {
         }
     }
 
-    private void calcularMediaPorSensor(Integer idSensor, List<RegistroClimatico> lista, String tipoDado, ToDoubleFunction<RegistroClimatico> funcao) {
-        try {
-            double media = lista.stream()
-                    .filter(Objects::nonNull)
-                    .mapToDouble(funcao)
-                    .average()
-                    .orElse(0.0);
+    private void calcularMediaPorSensor(Integer idSensor, List<RegistroClimatico> lista, String tipoDado) {
+        double soma = 0.0;
+        int quantidade = 0;
 
+        for (RegistroClimatico r : lista) {
+            if (r != null) {
+                try {
+                    double valor = obterValor(r, tipoDado);
+                    soma += valor;
+                    quantidade++;
+                } catch (NumberFormatException e) {
+                    System.err.println("Erro ao converter valor para sensor " + idSensor + " (" + tipoDado + "): " + e.getMessage());
+                }
+            }
+        }
+
+        if (quantidade > 0) {
+            double media = soma / quantidade;
             String chaveUnica = idSensor + "_" + tipoDado;
             medias.put(chaveUnica, media);
+        }
+    }
 
-        } catch (NumberFormatException e) {
-            System.err.println("Erro ao converter valor para sensor " + idSensor + " (" + tipoDado + "): " + e.getMessage());
+    private double obterValor(RegistroClimatico r, String tipo) {
+        switch (tipo) {
+            case "temperatura": return Double.parseDouble(r.temperatura());
+            case "umidade": return Double.parseDouble(r.umidade());
+            case "co2": return Double.parseDouble(r.cO2());
+            case "co": return Double.parseDouble(r.cO());
+            case "no2": return Double.parseDouble(r.nO2());
+            case "so2": return Double.parseDouble(r.sO2());
+            case "pm2_5": return Double.parseDouble(r.pM2_5());
+            case "pm10": return Double.parseDouble(r.pM10());
+            case "ruido": return Double.parseDouble(r.ruido());
+            case "radiacaoUV": return Double.parseDouble(r.radiacaoUV());
+            default: return 0.0;
         }
     }
 
